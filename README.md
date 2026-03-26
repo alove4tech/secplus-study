@@ -117,6 +117,28 @@ docker compose up -d --build
 docker compose down
 ```
 
+## 🤖 Automation
+
+This repo includes automated nightly review and sync:
+- **Schedule**: 10:10 PM daily
+- **Purpose**: Security review, quality checks, auto-push
+- **Details**: See `.scripts/README.md`
+
+### View automation logs
+```bash
+tail -f .scripts/review.log
+```
+
+### Run automation manually
+```bash
+./.scripts/review-and-push.sh
+```
+
+### Check automation status
+```bash
+crontab -l
+```
+
 ## 🚀 Future Enhancements
 
 Planned features for future releases:
