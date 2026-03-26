@@ -6,7 +6,7 @@
 set -e
 
 REPO_DIR="/home/claw/.openclaw/workspace/secplus-study"
-LOG_FILE="/home/claw/.openclaw/workspace/secplus-study/.scripts/review.log"
+LOG_FILE="/home/claw/.openclaw/logs/secplus-study-review.log"
 CONFIG_FILE="/home/claw/.openclaw/workspace/secplus-study/.scripts/.config"
 
 log() {
