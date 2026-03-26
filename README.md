@@ -1,50 +1,34 @@
 # 📚 Security+ Study Hub
 
-Standalone Next.js application for CompTIA Security+ exam preparation.
+A standalone Next.js application for CompTIA Security+ (SY0-701) exam preparation.
 
 ## 🎯 Features
 
-- **Flashcards**: Review key exam concepts by domain
-- **Practice Exams**: Multiple-choice questions with explanations
-- **Domain Filtering**: Focus on specific Security+ domains
-- **Dark UI**: Optimized for long study sessions
+- **Flashcards** - Review key exam concepts by domain
+- **Practice Exams** - Multiple-choice questions with detailed explanations
+- **Domain Filtering** - Focus on specific Security+ domains
+- **Dark UI** - Optimized for long study sessions
+- **PBQ Scenarios** - Performance-based question practice
 
 ## 📋 Quick Start
 
-### 1. Create Environment File
+### Option 1: Docker (Recommended)
 
 ```bash
-# Copy the example
+# Clone the repo
+git clone https://github.com/alove4tech/secplus-study.git
+cd secplus-study
+
+# Create environment file
 cp .env.example .env
 
-# Edit .env if needed (defaults should work for most use cases)
-nano .env
-```
-
-### 2. Deploy with Docker
-
-```bash
+# Build and run
 docker compose up -d --build
 ```
 
-### 3. Access
+Access at: `http://localhost:3001`
 
-```
-http://your-domain.com:3001
-```
-
-Or configure via Pangolin reverse proxy:
-- **Domain**: `secplus.yourdomain.com`
-- **Port**: `3001`
-
-## 🏗️ Infrastructure Notes
-
-- **Optimized for**: N100 mini PC with 512MB RAM
-- **Runtime**: Node.js 22 Alpine
-- **Framework**: Next.js 16 + React 19
-- **Build**: Multi-stage Docker build for small image size
-
-## 🧪 Local Development
+### Option 2: Local Development
 
 ```bash
 # Install dependencies
@@ -52,17 +36,65 @@ npm install
 
 # Run development server
 npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
 ```
 
-Open <http://localhost:3000>
+Access at: <http://localhost:3000>
 
-## 🔧 Docker Management
+## 📚 Security+ Domains Covered
+
+1. **General Security Concepts** (12%) - Core principles, security controls, resilience, identity fundamentals
+2. **Threats, Vulnerabilities, and Mitigations** (22%) - Threat actors, attacks, weaknesses, social engineering
+3. **Security Architecture** (18%) - Secure design across networks, systems, cloud, applications
+4. **Security Operations** (28%) - Monitoring, response, hardening, recovery, scanning, logging
+5. **Security Program Management and Oversight** (20%) - Governance, risk, training, policy, compliance
+
+## 🏗️ Tech Stack
+
+- **Framework**: Next.js 16 + React 19
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4
+- **UI Components**: Custom components with lucide-react icons
+- **Runtime**: Node.js 22 (Alpine for Docker)
+
+## 🚀 Deployment
+
+### Production Deployment
+
+```bash
+# Build the Docker image
+docker compose build
+
+# Run in production mode
+docker compose up -d
+```
+
+### Reverse Proxy Setup
+
+Configure with your reverse proxy (e.g., Pangolin, Traefik, Nginx):
+- **Domain**: `secplus.yourdomain.com`
+- **Port**: `3001`
+- **WebSocket**: Not required (no real-time features)
+
+### N100 Mini PC Configuration
+
+The app is optimized for resource-constrained environments:
+- **CPU**: 1 core limit
+- **Memory**: 512MB RAM (can increase if needed)
+- **Storage**: ~200MB for Docker image
+
+## 📝 Configuration
+
+Edit `.env` to customize:
+
+```bash
+# Node environment
+NODE_ENV=production
+
+# Application port
+PORT=3000
+```
+
+## 🔧 Management
 
 ### View logs
 ```bash
@@ -85,33 +117,18 @@ docker compose up -d --build
 docker compose down
 ```
 
-## 📚 Security+ Domains Covered
-
-1. **General Security Concepts** (12%) - Core principles, security controls, resilience
-2. **Threats, Vulnerabilities, and Mitigations** (22%) - Threat actors, attacks, defenses
-3. **Security Architecture** (18%) - Secure design across networks, cloud, applications
-4. **Security Operations** (28%) - Monitoring, response, hardening, recovery
-5. **Security Program Management and Oversight** (20%) - Governance, risk, training, compliance
-
 ## 🚀 Future Enhancements
 
-Planned features for future updates:
+Planned features for future releases:
 
 - [ ] Progress tracking with local storage
 - [ ] Randomized quiz generation
-- [ ] Performance analytics
-- [ ] Bookmark weak topics
-- [ ] Export study statistics
+- [ ] Performance analytics and statistics
+- [ ] Bookmark weak topics for review
+- [ ] Export study progress
 - [ ] Mobile app companion
 - [ ] Additional question bank
-
-## 🔐 Security Features
-
-- Read-only container filesystem
-- Non-privileged container execution
-- Resource limits (CPU: 1 core, Memory: 512MB)
-- Health checks enabled
-- Dedicated Docker network isolation
+- [ ] User accounts (optional)
 
 ## 🐛 Troubleshooting
 
@@ -121,16 +138,11 @@ docker compose logs secplus-study
 ```
 
 **Port already in use?**
-Change the port mapping in docker-compose.yml:
+Edit `docker-compose.yml`:
 ```yaml
 ports:
   - "3002:3000"  # Use 3002 instead of 3001
 ```
-
-**Performance issues?**
-- Increase memory limit in docker-compose
-- Check system resources: `htop`
-- Consider reducing container count on N100
 
 **Build failures?**
 ```bash
@@ -140,22 +152,41 @@ docker system prune -f
 docker compose up -d --build
 ```
 
-## 📊 Performance Tuning (N100)
+## 📊 Performance Tuning
 
-- **CPU**: 1 core limit is appropriate
-- **Memory**: 512MB is conservative, increase to 1GB if needed
-- **Cache**: `.next/cache` mounted to tmpfs for faster builds
-- **Build**: Standalone output for smaller image size
+For N100 or similar hardware:
 
-## 📝 Notes
+- **Memory**: 512MB is conservative; increase to 1GB if performance issues
+- **CPU**: 1 core is sufficient for study app usage
+- **Build time**: ~2-3 minutes on N100
+- **Runtime**: Very low resource usage (~50-100MB RAM idle)
 
-- Content currently uses a starter Security+ question/card bank
-- No database required (data is embedded in app)
-- Easy to extend with additional study content
-- Perfect for self-hosted homelab study environment
+## 🔐 Security
 
-## 📚 More Info
+- Read-only container filesystem
+- Non-privileged container execution
+- Resource limits configured
+- Health checks enabled
+- Dedicated Docker network isolation
+
+## 📚 Resources
 
 - [CompTIA Security+ Certification](https://certification.comptia.org/certifications/security)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Docker Compose Reference](https://docs.docker.com/compose/)
+
+## 📄 License
+
+MIT License - Feel free to use and modify for your own study needs.
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+- Report bugs
+- Suggest new features
+- Add flashcards or practice questions
+- Improve documentation
+
+---
+
+**Happy studying! 🎓**
