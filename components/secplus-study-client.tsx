@@ -61,7 +61,9 @@ type ExamState = {
   submitted: boolean;
   questions: Question[];
   mode: ExamMode;
-  startedAt: number;
+  startedAt: number | null;
+  revealedAnswers: Record<number, boolean>;
+  graded: boolean;
 };
 
 const ALL_DOMAINS = "all";
@@ -103,7 +105,7 @@ function buildExamQuestions(
     return shuffleArray(baseQuestions).slice(0, Math.min(questionCount, 8, baseQuestions.length));
   }
 
-  if (mode === "random" || mode === "timed" || mode === "custom") {
+  if (mode === "random" || mode === "timed" || mode === "custom" || mode === "standard") {
     return shuffleArray(baseQuestions).slice(0, Math.min(questionCount, baseQuestions.length));
   }
 
@@ -147,7 +149,9 @@ export function SecPlusStudyClient() {
     submitted: false,
     questions: buildExamQuestions(ALL_DOMAINS, ALL_TOPICS, "standard", [], 10),
     mode: "standard",
-    startedAt: Date.now(),
+    startedAt: null,
+    revealedAnswers: {},
+    graded: false,
   });
 
   useEffect(() => {
@@ -173,22 +177,27 @@ export function SecPlusStudyClient() {
   }, [savedResults, missedQuestionIds, flashcardProgress]);
 
   useEffect(() => {
-    if (examMode !== "timed" || examState.submitted || examState.questions.length === 0) return;
+    if (examMode !== "timed" || examState.graded || examState.questions.length === 0 || !examState.startedAt) return;
 
-    setTimeRemaining(TIMED_EXAM_SECONDS);
+    const startedAt = examState.startedAt;
     const interval = window.setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          window.clearInterval(interval);
-          setExamState((current) => ({ ...current, submitted: true }));
-          return 0;
-        }
-        return prev - 1;
-      });
+      const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+      const remaining = Math.max(0, TIMED_EXAM_SECONDS - elapsedSeconds);
+
+      setTimeRemaining(remaining);
+
+      if (remaining <= 0) {
+        window.clearInterval(interval);
+        setExamState((current) => ({
+          ...current,
+          graded: true,
+          revealedAnswers: Object.fromEntries(current.questions.map((_, index) => [index, true])),
+        }));
+      }
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [examMode, examState.startedAt, examState.submitted, examState.questions.length]);
+  }, [examMode, examState.startedAt, examState.graded, examState.questions.length]);
 
   const availableTopics = useMemo(() => getTopics(selectedDomain), [selectedDomain]);
 
@@ -216,8 +225,12 @@ export function SecPlusStudyClient() {
 
   const currentCard = filteredFlashcards[cardIndex];
   const currentQuestion = examState.questions[examState.current];
+  const currentQuestionAnswered = currentQuestion ? examState.answers[examState.current] !== undefined : false;
+  const currentQuestionRevealed = examState.revealedAnswers[examState.current] ?? false;
+  const examStarted = examState.startedAt !== null;
 
   const answeredCount = Object.keys(examState.answers).length;
+  const reviewedCount = Object.keys(examState.revealedAnswers).filter((key) => examState.revealedAnswers[Number(key)]).length;
   const score = examState.questions.reduce((total, question, index) => {
     return total + (examState.answers[index] === question.answer ? 1 : 0);
   }, 0);
@@ -259,7 +272,9 @@ export function SecPlusStudyClient() {
       submitted: false,
       questions: buildExamQuestions(selectedDomain, selectedTopic, mode, missedQuestionIds, questionCount),
       mode,
-      startedAt: Date.now(),
+      startedAt: null,
+      revealedAnswers: {},
+      graded: false,
     });
     setTimeRemaining(TIMED_EXAM_SECONDS);
   };
@@ -282,9 +297,10 @@ export function SecPlusStudyClient() {
   };
 
   const selectAnswer = (optionIndex: number) => {
-    if (examState.submitted) return;
+    if (examState.graded || currentQuestionRevealed) return;
     setExamState((prev) => ({
       ...prev,
+      startedAt: prev.startedAt ?? Date.now(),
       answers: {
         ...prev.answers,
         [prev.current]: optionIndex,
@@ -292,29 +308,55 @@ export function SecPlusStudyClient() {
     }));
   };
 
-  const submitExam = () => {
-    const missed = examState.questions
-      .filter((question, index) => examState.answers[index] !== question.answer)
+  const submitAnswer = () => {
+    if (!currentQuestionAnswered) return;
+    setExamState((prev) => ({
+      ...prev,
+      startedAt: prev.startedAt ?? Date.now(),
+      revealedAnswers: {
+        ...prev.revealedAnswers,
+        [prev.current]: true,
+      },
+    }));
+  };
+
+  const gradeExam = () => {
+    const questions = examState.questions;
+    const answers = examState.answers;
+    const startedAt = examState.startedAt ?? Date.now();
+
+    const missed = questions
+      .filter((question, index) => answers[index] !== question.answer)
       .map((question) => question.id);
 
-    setMissedQuestionIds((prev) => Array.from(new Set([...prev, ...missed])));
+    const nextScore = questions.reduce((total, question, index) => {
+      return total + (answers[index] === question.answer ? 1 : 0);
+    }, 0);
+    const nextPercent = questions.length ? Math.round((nextScore / questions.length) * 100) : 0;
+    const durationSeconds = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
 
-    const durationSeconds = Math.max(0, Math.round((Date.now() - examState.startedAt) / 1000));
     const result: ExamResult = {
-      id: crypto.randomUUID(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       mode: examState.mode,
       domain: selectedDomain,
       topic: selectedTopic,
-      total: examState.questions.length,
-      correct: score,
-      percent: scorePercent,
+      total: questions.length,
+      correct: nextScore,
+      percent: nextPercent,
       timestamp: new Date().toISOString(),
       durationSeconds,
       missedQuestionIds: missed,
     };
 
-    setSavedResults((prev) => [result, ...prev].slice(0, 50));
-    setExamState((prev) => ({ ...prev, submitted: true }));
+    setMissedQuestionIds((current) => Array.from(new Set([...current, ...missed])));
+    setSavedResults((current) => [result, ...current].slice(0, 50));
+    setExamState((prev) => ({
+      ...prev,
+      startedAt,
+      graded: true,
+      submitted: true,
+      revealedAnswers: Object.fromEntries(prev.questions.map((_, index) => [index, true])),
+    }));
   };
 
   const rateFlashcard = (confidence: number) => {
@@ -450,10 +492,10 @@ export function SecPlusStudyClient() {
           </div>
 
           <div className="flex items-end gap-2">
-            <Button variant="outline" onClick={exportProgress}>
+            <Button type="button" variant="outline" onClick={exportProgress}>
               <Download className="mr-1 h-4 w-4" /> Export
             </Button>
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
               <Upload className="mr-1 h-4 w-4" /> Import
             </Button>
           </div>
@@ -521,6 +563,7 @@ export function SecPlusStudyClient() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 md:flex md:gap-2">
                     <Button
+                      type="button"
                       variant="outline"
                       onClick={() => {
                         setCardIndex((prev) => Math.max(prev - 1, 0));
@@ -530,10 +573,11 @@ export function SecPlusStudyClient() {
                     >
                       <ChevronLeft className="mr-1 h-4 w-4" /> Prev
                     </Button>
-                    <Button variant="outline" onClick={() => setFlipped((prev) => !prev)}>
+                    <Button type="button" variant="outline" onClick={() => setFlipped((prev) => !prev)}>
                       Flip
                     </Button>
                     <Button
+                      type="button"
                       onClick={() => {
                         setCardIndex((prev) => Math.min(prev + 1, filteredFlashcards.length - 1));
                         setFlipped(false);
@@ -546,9 +590,9 @@ export function SecPlusStudyClient() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
-                  <Button variant="outline" onClick={() => rateFlashcard(1)}>Again</Button>
-                  <Button variant="outline" onClick={() => rateFlashcard(2)}>Good</Button>
-                  <Button onClick={() => rateFlashcard(3)}>Easy</Button>
+                  <Button type="button" variant="outline" onClick={() => rateFlashcard(1)}>Again</Button>
+                  <Button type="button" variant="outline" onClick={() => rateFlashcard(2)}>Good</Button>
+                  <Button type="button" onClick={() => rateFlashcard(3)}>Easy</Button>
                 </div>
               </>
             ) : (
@@ -588,23 +632,23 @@ export function SecPlusStudyClient() {
                   <div className="mt-1 text-2xl font-bold">{answeredCount}/{examState.questions.length}</div>
                 </div>
                 <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
+                  <div className="text-muted-foreground">Reviewed</div>
+                  <div className="mt-1 text-2xl font-bold">{reviewedCount}/{examState.questions.length}</div>
+                </div>
+                <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
                   <div className="text-muted-foreground">Current</div>
                   <div className="mt-1 text-2xl font-bold">{examState.questions.length ? examState.current + 1 : 0}</div>
                 </div>
                 <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
                   <div className="text-muted-foreground">Score</div>
-                  <div className="mt-1 text-2xl font-bold">{examState.submitted ? `${scorePercent}%` : "--"}</div>
-                </div>
-                <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
-                  <div className="text-muted-foreground">Missed bank</div>
-                  <div className="mt-1 text-2xl font-bold">{missedQuestionIds.length}</div>
+                  <div className="mt-1 text-2xl font-bold text-green-300">{examState.graded ? `${scorePercent}%` : "Not graded"}</div>
                 </div>
                 <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <Clock3 className="h-4 w-4" /> Timer
                   </div>
                   <div className="mt-1 text-2xl font-bold">
-                    {examMode === "timed" ? formatDuration(timeRemaining) : "--:--"}
+                    {examMode === "timed" ? formatDuration(timeRemaining) : examStarted ? formatDuration(Math.max(0, Math.round((Date.now() - (examState.startedAt ?? Date.now())) / 1000))) : "00:00"}
                   </div>
                 </div>
               </div>
@@ -633,14 +677,16 @@ export function SecPlusStudyClient() {
                   <div className="space-y-2">
                     {currentQuestion.options.map((option, optionIndex) => {
                       const selected = examState.answers[examState.current] === optionIndex;
-                      const correct = examState.submitted && currentQuestion.answer === optionIndex;
-                      const incorrect = examState.submitted && selected && currentQuestion.answer !== optionIndex;
+                      const revealAnswer = examState.graded || currentQuestionRevealed;
+                      const correct = revealAnswer && currentQuestion.answer === optionIndex;
+                      const incorrect = revealAnswer && selected && currentQuestion.answer !== optionIndex;
 
                       return (
                         <button
                           key={`${currentQuestion.id}-${optionIndex}`}
                           type="button"
                           onClick={() => selectAnswer(optionIndex)}
+                          disabled={revealAnswer}
                           className={`w-full rounded-xl border p-4 text-left transition ${
                             correct
                               ? "border-green-500 bg-green-500/10"
@@ -649,7 +695,7 @@ export function SecPlusStudyClient() {
                                 : selected
                                   ? "border-primary bg-primary/10"
                                   : "border-border bg-secondary/20 hover:border-primary/40 hover:bg-secondary/40"
-                          }`}
+                          } ${revealAnswer ? "cursor-default" : "cursor-pointer"}`}
                         >
                           <span className="text-sm font-medium text-foreground">{option}</span>
                         </button>
@@ -657,11 +703,11 @@ export function SecPlusStudyClient() {
                     })}
                   </div>
 
-                  {examState.submitted && (
+                  {(examState.graded || currentQuestionRevealed) && (
                     <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
                       <div className="mb-2 flex items-center gap-2 font-medium text-foreground">
                         <CheckCircle2 className="h-4 w-4 text-primary" />
-                        Explanation
+                        {examState.answers[examState.current] === currentQuestion.answer ? "Correct" : "Incorrect"}
                       </div>
                       <p className="text-sm leading-6 text-muted-foreground">{currentQuestion.explanation}</p>
                     </div>
@@ -669,6 +715,7 @@ export function SecPlusStudyClient() {
 
                   <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
                     <Button
+                      type="button"
                       variant="outline"
                       onClick={() => setExamState((prev) => ({ ...prev, current: Math.max(prev.current - 1, 0) }))}
                       disabled={examState.current === 0}
@@ -676,21 +723,25 @@ export function SecPlusStudyClient() {
                       <ChevronLeft className="mr-1 h-4 w-4" /> Previous
                     </Button>
                     <Button
+                      type="button"
                       variant="outline"
                       onClick={() =>
                         setExamState((prev) => ({
                           ...prev,
-                          current: Math.min(prev.current + 1, examState.questions.length - 1),
+                          current: Math.min(prev.current + 1, prev.questions.length - 1),
                         }))
                       }
                       disabled={examState.current >= examState.questions.length - 1}
                     >
                       Next <ChevronRight className="ml-1 h-4 w-4" />
                     </Button>
-                    <Button onClick={submitExam} disabled={!examState.questions.length || answeredCount !== examState.questions.length || examState.submitted}>
-                      Submit
+                    <Button type="button" onClick={submitAnswer} disabled={!currentQuestionAnswered || currentQuestionRevealed || examState.graded}>
+                      Submit Answer
                     </Button>
-                    <Button variant="secondary" onClick={() => resetExam(examMode)}>
+                    <Button type="button" onClick={gradeExam} disabled={!examState.questions.length || answeredCount !== examState.questions.length || examState.graded}>
+                      Grade Exam
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={() => resetExam(examMode)}>
                       <RotateCcw className="mr-1 h-4 w-4" /> Reset
                     </Button>
                   </div>
@@ -703,11 +754,11 @@ export function SecPlusStudyClient() {
                 </div>
               )}
 
-              {examState.submitted && examState.questions.length > 0 && (
-                <div className="rounded-xl border border-border bg-secondary/20 p-4">
+              {examState.graded && examState.questions.length > 0 && (
+                <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4">
                   <h4 className="font-semibold text-foreground">Results</h4>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    You scored <span className="font-semibold text-foreground">{score}</span> out of {examState.questions.length} ({scorePercent}%) in {formatDuration(Math.max(0, Math.round((Date.now() - examState.startedAt) / 1000)))}.
+                    You scored <span className="font-semibold text-foreground">{score}</span> out of {examState.questions.length} (<span className="font-semibold text-green-300">{scorePercent}%</span>) in {formatDuration(Math.max(0, Math.round((Date.now() - (examState.startedAt ?? Date.now())) / 1000)))}.
                   </p>
                 </div>
               )}
