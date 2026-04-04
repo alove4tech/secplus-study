@@ -37,10 +37,6 @@ services:
       - /tmp
       - /app/.next/cache
 
-volumes:
-  secplus-study-cache:
-    driver: local
-
 networks:
   secplus-study-net:
     driver: bridge

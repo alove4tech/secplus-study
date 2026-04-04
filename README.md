@@ -12,6 +12,21 @@ Next.js app for CompTIA Security+ (SY0-701) exam prep.
 
 ## Getting started
 
+## Architecture support
+
+The app is designed to run on both:
+
+- `amd64` / x86_64
+- `arm64`
+
+Current stack notes:
+
+- plain Next.js + React app
+- no known native module dependencies that should block multi-arch builds today
+- Docker uses official multi-arch Node 22 images
+
+That means it should be usable on both standard x86 hosts and ARM64 systems like Ampere, Raspberry Pi-class devices with enough resources, or ARM VPS instances.
+
 ### Docker
 
 ```bash
@@ -22,6 +37,18 @@ docker compose up -d --build
 ```
 
 Opens on `http://localhost:3001`.
+
+To force a specific image target when needed:
+
+```bash
+DOCKER_PLATFORM=linux/arm64 docker compose up -d --build
+```
+
+or:
+
+```bash
+DOCKER_PLATFORM=linux/amd64 docker compose up -d --build
+```
 
 ### Local dev
 
@@ -43,6 +70,12 @@ Runs on `http://localhost:3000`.
 ## Stack
 
 Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · Node 22 Alpine
+
+## Portability notes
+
+- Dockerfile uses a multi-stage build with Next.js standalone output
+- runtime image is kept small and architecture-neutral
+- if native dependencies are added later, ARM64 compatibility should be re-verified
 
 ## Config
 
