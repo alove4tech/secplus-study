@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A responsive CompTIA Security+ SY0-701 study app with quizzes, PBQs, flashcards, labs, mock exams, and progress tracking." />
+    <title>Security+ Command Center</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23087d86'/%3E%3Cpath d='M32 9 50 17v13c0 11-7.5 20-18 25-10.5-5-18-14-18-25V17l18-8Z' fill='none' stroke='white' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='m23 32 6 6 13-15' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M12 2 20 5.5V11c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5.5L12 2Z" />
+              <path d="M8.5 12.1 10.7 14.3 15.8 8.9" />
+            </svg>
+          </div>
+          <div>
+            <p>SY0-701</p>
+            <strong>Security+</strong>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Study sections">
+          <button class="nav-link active" data-view="dashboard"><span class="nav-svg dashboard-svg" aria-hidden="true"></span>Command Center</button>
+          <button class="nav-link" data-view="study-plan"><span class="nav-svg plan-svg" aria-hidden="true"></span>Study Plan</button>
+          <button class="nav-link" data-view="practice"><span class="nav-svg practice-svg" aria-hidden="true"></span>Practice</button>
+          <button class="nav-link" data-view="pbq"><span class="nav-svg pbq-svg" aria-hidden="true"></span>PBQs</button>
+          <button class="nav-link" data-view="flashcards"><span class="nav-svg flashcards-svg" aria-hidden="true"></span>Flashcards</button>
+          <button class="nav-link" data-view="labs"><span class="nav-svg labs-svg" aria-hidden="true"></span>Labs</button>
+          <button class="nav-link" data-view="exams"><span class="nav-svg exams-svg" aria-hidden="true"></span>Mock Exams</button>
+          <button class="nav-link" data-view="notes"><span class="nav-svg notes-svg" aria-hidden="true"></span>Notes</button>
+          <button class="nav-link" data-view="progress"><span class="nav-svg progress-svg" aria-hidden="true"></span>Progress</button>
+          <button class="nav-link" data-view="settings"><span class="nav-svg settings-svg" aria-hidden="true"></span>Settings</button>
+        </nav>
+
+        <div class="sidebar-card">
+          <p class="eyebrow">Flashcard Streak</p>
+          <strong>12 Days</strong>
+          <div class="streak-days" aria-label="Weekly flashcard streak">
+            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+          </div>
+          <p>Keep it up. Finish one quiz and one lab today.</p>
+        </div>
+      </aside>
+
+      <div class="mobile-topbar">
+        <div class="brand compact">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M12 2 20 5.5V11c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5.5L12 2Z" />
+              <path d="M8.5 12.1 10.7 14.3 15.8 8.9" />
+            </svg>
+          </div>
+          <strong>SY0-701</strong>
+        </div>
+        <button class="icon-button" id="menuToggle" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+      </div>
+
+      <main class="main-content">
+        <section class="view active" id="dashboard" aria-labelledby="dashboard-title">
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">SY0-701</p>
+              <h1 id="dashboard-title">Security+ Command Center</h1>
+              <p class="header-copy">Plan the day, attack weak domains, and move from study mode into hands-on labs without losing your place.</p>
+            </div>
+            <div class="header-actions">
+              <div class="top-stat" title="Flashcard streak">12</div>
+              <div class="top-stat calendar" title="Upcoming exam">May 24</div>
+              <button class="button secondary" data-view-link="labs">Start Lab</button>
+              <button class="button primary" data-view-link="practice">Take Quiz</button>
+            </div>
+          </header>
+
+          <div class="dashboard-grid">
+            <article class="readiness-panel">
+              <div class="readiness-copy">
+                <p class="eyebrow">Exam Readiness</p>
+                <h2>78%</h2>
+                <p>You're on track. Keep focusing on weak areas to improve your score.</p>
+                <div class="readiness-stats">
+                  <span><strong>780 / 900</strong> Estimated Score</span>
+                  <span><strong>72nd</strong> Percentile</span>
+                  <span><strong>May 18, 2025</strong> Assessment</span>
+                </div>
+              </div>
+              <div class="readiness-ring" role="img" aria-label="Exam readiness is 78 percent"><span>78%<small>Good</small></span></div>
+            </article>
+
+            <article class="panel today-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Daily Plan</p>
+                  <h2>Today</h2>
+                </div>
+                <button class="text-button" data-view-link="study-plan">Edit Plan</button>
+              </div>
+              <p class="focus-line">Today's focus: <strong>Domain 2: Architecture and Design</strong><span>Est. 90 min</span></p>
+              <ul class="task-list" id="dashboardStudyPlan"></ul>
+              <button class="button primary plan-start" data-view-link="practice">Start Study Session</button>
+            </article>
+
+            <article class="panel domains-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Domain Progress</p>
+                  <h2>SY0-701 Objectives</h2>
+                </div>
+              </div>
+              <div class="domain-list" id="domainList"></div>
+            </article>
+
+            <article class="panel quiz-card">
+              <p class="eyebrow">Practice Quiz</p>
+              <h2>Quick 10 Questions</h2>
+              <p>Test your knowledge with a short quiz from the <strong id="bankSize">300</strong>-question bank.</p>
+              <div class="mini-scores"><span>Last Score <strong>7 / 10</strong></span><span>Best Score <strong>8 / 10</strong></span></div>
+              <button class="button primary" data-view-link="practice">Start Quiz</button>
+            </article>
+
+            <article class="panel flash-card">
+              <p class="eyebrow">Flashcards</p>
+              <h2>50 / 50</h2>
+              <p>Daily goal complete. Next review queue contains identity, cryptography, and governance terms.</p>
+              <button class="button secondary" data-view-link="flashcards">Study Flashcards</button>
+            </article>
+
+            <article class="panel pbq-card">
+              <p class="eyebrow">Performance-Based Questions</p>
+              <h2>Configure Controls</h2>
+              <p>Practice PBQ-style tasks for ports, segmentation, access controls, and incident response ordering.</p>
+              <button class="button primary" data-view-link="pbq">Open PBQs</button>
+            </article>
+
+            <article class="panel lab-preview">
+              <div>
+                <p class="eyebrow">Featured Lab</p>
+                <h2>Incident Response: Suspicious Sign-In</h2>
+                <p>Analyze evidence, choose containment steps, and get a debrief aligned to Security+ objectives.</p>
+              </div>
+              <div class="network-visual" aria-hidden="true"><span class="node user-node"></span><span class="node firewall-node"></span><span class="node server-node"></span><span class="node alert-node"></span></div>
+              <button class="button primary" data-view-link="labs">Open Simulator</button>
+            </article>
+
+            <article class="panel mock-preview">
+              <p class="eyebrow">Upcoming Mock Exam</p>
+              <h2>SY0-701 Full Length Exam</h2>
+              <div class="exam-meta"><span>May 24, 2025</span><span>9:00 AM</span><span>120 Questions</span><span>90 Minutes</span></div>
+              <button class="button secondary" data-view-link="exams">View Details</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="study-plan" aria-labelledby="study-plan-title">
+          <header class="page-header compact-header">
+            <div>
+              <p class="eyebrow">Study Plan</p>
+              <h1 id="study-plan-title">Today's Session</h1>
+              <p class="header-copy">A focused 90-minute path modeled after the dashboard plan.</p>
+            </div>
+            <button class="button primary" data-view-link="practice">Start Study Session</button>
+          </header>
+          <div class="progress-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div><p class="eyebrow">Domain 2</p><h2>Architecture and Design</h2></div>
+                <span class="status-pill">2 / 4 completed</span>
+              </div>
+              <ul class="task-list large" id="studyPlanList"></ul>
+            </article>
+            <article class="panel">
+              <p class="eyebrow">Quick Tips</p>
+              <h2>Session Strategy</h2>
+              <ul class="notes-list">
+                <li>Answer first, then read the explanation.</li>
+                <li>Mark low-confidence questions for review.</li>
+                <li>Finish with the lab if incident response feels weak.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="practice" aria-labelledby="practice-title">
+          <header class="page-header compact-header">
+            <div>
+              <p class="eyebrow">Adaptive Practice</p>
+              <h1 id="practice-title">Scenario Practice</h1>
+              <p class="header-copy">Answer realistic prompts from a <strong id="practiceBankSize">300</strong>-question SY0-701 bank, tag confidence, and review why each option works or fails.</p>
+            </div>
+            <div class="header-actions">
+              <button class="button secondary" id="randomQuestion">Random Question</button>
+              <button class="button secondary" id="resetQuiz">Reset Score</button>
+            </div>
+          </header>
+
+          <div class="study-layout">
+            <article class="panel question-panel">
+              <div class="question-meta">
+                <span id="questionCounter">Question 1 of 300</span>
+                <span>Objective <strong id="questionObjective">2.4</strong></span>
+                <span id="questionDomain">architecture</span>
+                <span>Score <strong id="quizScore">0/0</strong></span>
+              </div>
+              <h2 id="questionText"></h2>
+              <div class="answers" id="answers"></div>
+              <div class="confidence-row">
+                <span>Confidence</span>
+                <button class="chip active">Low</button>
+                <button class="chip">Medium</button>
+                <button class="chip">High</button>
+              </div>
+            </article>
+
+            <aside class="panel explanation-panel">
+              <p class="eyebrow">Explanation</p>
+              <div id="explanation">Choose an answer to reveal the explanation.</div>
+              <div class="split-actions">
+                <button class="button secondary" id="reviewQuestion">Review Later</button>
+                <button class="button primary" id="nextQuestion">Next Question</button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="pbq" aria-labelledby="pbq-title">
+          <header class="page-header compact-header">
+            <div>
+              <p class="eyebrow">Performance-Based Questions</p>
+              <h1 id="pbq-title">PBQ Simulator</h1>
+              <p class="header-copy">Practice exam-style tasks that ask you to configure, classify, and sequence security controls.</p>
+            </div>
+            <button class="button secondary" id="resetPbq">Reset PBQ</button>
+          </header>
+
+          <div class="pbq-grid">
+            <article class="panel pbq-main">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Task 1</p>
+                  <h2>Place Controls in the Correct Network Zone</h2>
+                </div>
+                <span class="status-pill" id="pbqScore">0/4</span>
+              </div>
+              <p class="pbq-copy">A small business hosts a public website, internal file sharing, remote administration, and identity services. Choose the best zone for each item.</p>
+              <div class="pbq-table" id="pbqTable"></div>
+            </article>
+
+            <aside class="panel pbq-help">
+              <p class="eyebrow">PBQ Strategy</p>
+              <h2>Think Like The Exam</h2>
+              <ul class="notes-list">
+                <li>Public-facing services usually belong in a screened subnet.</li>
+                <li>Administrative paths should be hardened and restricted.</li>
+                <li>Identity and file services usually stay internal.</li>
+              </ul>
+              <div class="split-actions">
+                <button class="button secondary" id="showPbqHint">Hint</button>
+                <button class="button primary" id="gradePbq">Grade PBQ</button>
+              </div>
+              <div class="lab-feedback" id="pbqFeedback" aria-live="polite"></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="flashcards" aria-labelledby="flashcards-title">
+          <header class="page-header compact-header">
+            <div><p class="eyebrow">Spaced Repetition</p><h1 id="flashcards-title">Flashcards</h1><p class="header-copy">Short recall reps for ports, policies, attacks, and controls.</p></div>
+          </header>
+          <div class="flashcard-stage">
+            <article class="flashcard" id="flashcard" tabindex="0" role="button" aria-label="Flip flashcard">
+              <p class="eyebrow" id="flashcardType">Term</p>
+              <h2 id="flashcardFront"></h2>
+              <p id="flashcardBack"></p>
+              <span class="flip-note">Tap to flip · <span id="flashcardProgress">1/6</span></span>
+            </article>
+            <div class="flashcard-controls"><button class="button secondary" id="prevCard">Previous</button><button class="button primary" id="nextCard">Got It</button></div>
+          </div>
+        </section>
+
+        <section class="view" id="labs" aria-labelledby="labs-title">
+          <header class="page-header compact-header">
+            <div><p class="eyebrow">Hands-On Practice</p><h1 id="labs-title">Lab Simulator</h1><p class="header-copy">Guided Security+ labs with evidence, checklists, hints, scoring, and debriefs.</p></div>
+            <button class="button secondary" id="resetLab">Reset Lab</button>
+          </header>
+          <div class="lab-grid">
+            <article class="panel lab-main">
+              <div class="panel-heading"><div><p class="eyebrow">Incident Response</p><h2>Suspicious Sign-In</h2></div><span class="status-pill alert">Active Alert</span></div>
+              <div class="lab-map" aria-label="Network scenario diagram"><div class="map-node endpoint">Remote User</div><div class="map-link"></div><div class="map-node firewall">Firewall</div><div class="map-link"></div><div class="map-node identity">Identity Provider</div><div class="map-node server">File Server</div></div>
+              <div class="evidence-panel"><h3>Evidence</h3><ul><li>Impossible travel sign-in from Boston and Berlin within 11 minutes.</li><li>MFA push accepted after five denied prompts.</li><li>New inbox forwarding rule created for finance approvals.</li><li>File server access spike from the same identity.</li></ul></div>
+            </article>
+            <article class="panel checklist-panel">
+              <div class="panel-heading"><div><p class="eyebrow">Containment Checklist</p><h2>Choose Actions</h2></div><span id="labScore">0/4</span></div>
+              <div class="checklist" id="labChecklist"></div>
+              <div class="split-actions"><button class="button secondary" id="showHint">Hint</button><button class="button primary" id="gradeLab">Submit Lab</button></div>
+              <div class="lab-feedback" id="labFeedback" aria-live="polite"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="exams" aria-labelledby="exams-title">
+          <header class="page-header compact-header"><div><p class="eyebrow">Timed Review</p><h1 id="exams-title">Mock Exams</h1><p class="header-copy">Schedule full-length exams, review misses, and track readiness trends.</p></div></header>
+          <div class="exam-grid">
+            <article class="panel exam-card strong"><p class="eyebrow">Recommended</p><h2>90-question Readiness Exam</h2><p>Mixed SY0-701 objectives with final score, domain breakdown, and review list.</p><button class="button primary">Schedule Exam</button></article>
+            <article class="panel exam-card"><p class="eyebrow">Quick Check</p><h2>25-question Weak Area Drill</h2><p>Focused on Governance, Risk, and Compliance misses.</p><button class="button secondary">Start Drill</button></article>
+            <article class="panel exam-card"><p class="eyebrow">Review</p><h2>Missed Questions</h2><p>18 explanations waiting from your last two sessions.</p><button class="button secondary">Open Review</button></article>
+          </div>
+        </section>
+
+        <section class="view" id="notes" aria-labelledby="notes-title">
+          <header class="page-header compact-header"><div><p class="eyebrow">Notes</p><h1 id="notes-title">Study Notes</h1><p class="header-copy">High-yield reminders pulled from weak areas and lab debriefs.</p></div></header>
+          <article class="panel notes-panel"><ul class="notes-list large" id="notesList"></ul></article>
+        </section>
+
+        <section class="view" id="progress" aria-labelledby="progress-title">
+          <header class="page-header compact-header"><div><p class="eyebrow">Analytics</p><h1 id="progress-title">Progress</h1><p class="header-copy">See mastery by domain and the exact objectives that deserve attention next.</p></div></header>
+          <div class="progress-grid">
+            <article class="panel heatmap-panel"><p class="eyebrow">Objective Heat Map</p><h2>Weak Areas</h2><div class="heatmap" id="heatmap"></div></article>
+            <article class="panel notes-panel"><p class="eyebrow">Study Notes</p><h2>Next Review</h2><ul class="notes-list" id="dashboardNotes"></ul></article>
+            <article class="panel domain-ring-panel"><p class="eyebrow">Domain Progress</p><h2>Mobile Snapshot</h2><div class="domain-rings" id="domainRings"></div></article>
+          </div>
+        </section>
+
+        <section class="view" id="settings" aria-labelledby="settings-title">
+          <header class="page-header compact-header"><div><p class="eyebrow">Settings</p><h1 id="settings-title">Preferences</h1><p class="header-copy">Tune the study environment for longer sessions.</p></div></header>
+          <article class="panel settings-panel">
+            <div><p class="eyebrow">Appearance</p><h2>Theme</h2><p id="themeStatus">Light mode enabled</p></div>
+            <label class="switch"><input type="checkbox" id="themeToggle" /><span>Dark mode</span></label>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
