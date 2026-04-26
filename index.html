@@ -64,6 +64,7 @@
       </div>
 
       <main class="main-content">
+        <!-- DASHBOARD -->
         <section class="view active" id="dashboard" aria-labelledby="dashboard-title">
           <header class="page-header">
             <div>
@@ -121,6 +122,7 @@
               <p class="eyebrow">Practice Quiz</p>
               <h2>Quick 10 Questions</h2>
               <p>Test your knowledge with a short quiz from the <strong id="bankSize">300</strong>-question bank.</p>
+              <p id="reviewQueueCount" style="margin:0.3rem 0;font-size:0.85rem;color:var(--text-muted)">Review queue: 0 items</p>
               <div class="mini-scores"><span>Last Score <strong>–</strong></span><span>Best Score <strong>–</strong></span></div>
               <button class="button primary" data-view-link="practice">Start Quiz</button>
             </article>
@@ -152,12 +154,13 @@
             <article class="panel mock-preview">
               <p class="eyebrow">Upcoming Mock Exam</p>
               <h2>SY0-701 Full Length Exam</h2>
-              <div class="exam-meta"><span>SY0-701</span><span>90 Questions max</span><span>90 Minutes</span><span>Passing: 750/900</span></div>
+              <div class="exam-meta"><span>SY0-701</span><span>90 Questions</span><span>90 Minutes</span><span>Passing: 750/900</span></div>
               <button class="button secondary" data-view-link="exams">View Details</button>
             </article>
           </div>
         </section>
 
+        <!-- STUDY PLAN -->
         <section class="view" id="study-plan" aria-labelledby="study-plan-title">
           <header class="page-header compact-header">
             <div>
@@ -170,8 +173,8 @@
           <div class="progress-grid">
             <article class="panel">
               <div class="panel-heading">
-                <div><p class="eyebrow">Domain 2</p><h2>Architecture and Design</h2></div>
-                <span class="status-pill">2 / 4 completed</span>
+                <div><p class="eyebrow">Full Plan</p><h2>All Objectives</h2></div>
+                <span class="status-pill">0 / 10 completed</span>
               </div>
               <ul class="task-list large" id="studyPlanList"></ul>
             </article>
@@ -187,6 +190,7 @@
           </div>
         </section>
 
+        <!-- PRACTICE -->
         <section class="view" id="practice" aria-labelledby="practice-title">
           <header class="page-header compact-header">
             <div>
@@ -195,6 +199,7 @@
               <p class="header-copy">Answer realistic prompts from a <strong id="practiceBankSize">300</strong>-question SY0-701 bank, tag confidence, and review why each option works or fails.</p>
             </div>
             <div class="header-actions">
+              <button class="button secondary" id="reviewWeakAreas">Review Weak Areas</button>
               <button class="button secondary" id="randomQuestion">Random Question</button>
               <button class="button secondary" id="resetQuiz">Reset Score</button>
             </div>
@@ -229,6 +234,7 @@
           </div>
         </section>
 
+        <!-- PBQ -->
         <section class="view" id="pbq" aria-labelledby="pbq-title">
           <header class="page-header compact-header">
             <div>
@@ -236,30 +242,29 @@
               <h1 id="pbq-title">PBQ Simulator</h1>
               <p class="header-copy">Practice exam-style tasks that ask you to configure, classify, and sequence security controls.</p>
             </div>
-            <button class="button secondary" id="resetPbq">Reset PBQ</button>
+            <div class="header-actions">
+              <select id="pbqScenarioSelect" aria-label="Choose PBQ scenario" style="padding:0.4rem 0.6rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text)"></select>
+              <button class="button secondary" id="resetPbq">Reset PBQ</button>
+            </div>
           </header>
 
           <div class="pbq-grid">
             <article class="panel pbq-main">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Task 1</p>
-                  <h2>Place Controls in the Correct Network Zone</h2>
+                  <p class="eyebrow" id="pbqEyebrow">Task</p>
+                  <h2 id="pbqTitle">Place Controls in the Correct Network Zone</h2>
                 </div>
                 <span class="status-pill" id="pbqScore">0/4</span>
               </div>
-              <p class="pbq-copy">A small business hosts a public website, internal file sharing, remote administration, and identity services. Choose the best zone for each item.</p>
+              <p class="pbq-copy" id="pbqDescription"></p>
               <div class="pbq-table" id="pbqTable"></div>
             </article>
 
             <aside class="panel pbq-help">
               <p class="eyebrow">PBQ Strategy</p>
               <h2>Think Like The Exam</h2>
-              <ul class="notes-list">
-                <li>Public-facing services usually belong in a screened subnet.</li>
-                <li>Administrative paths should be hardened and restricted.</li>
-                <li>Identity and file services usually stay internal.</li>
-              </ul>
+              <ul class="notes-list" id="pbqStrategy"></ul>
               <div class="split-actions">
                 <button class="button secondary" id="showPbqHint">Hint</button>
                 <button class="button primary" id="gradePbq">Grade PBQ</button>
@@ -269,6 +274,7 @@
           </div>
         </section>
 
+        <!-- FLASHCARDS -->
         <section class="view" id="flashcards" aria-labelledby="flashcards-title">
           <header class="page-header compact-header">
             <div><p class="eyebrow">Spaced Repetition</p><h1 id="flashcards-title">Flashcards</h1><p class="header-copy">Short recall reps for ports, policies, attacks, and controls.</p></div>
@@ -284,16 +290,20 @@
           </div>
         </section>
 
+        <!-- LABS -->
         <section class="view" id="labs" aria-labelledby="labs-title">
           <header class="page-header compact-header">
             <div><p class="eyebrow">Hands-On Practice</p><h1 id="labs-title">Lab Simulator</h1><p class="header-copy">Guided Security+ labs with evidence, checklists, hints, scoring, and debriefs.</p></div>
-            <button class="button secondary" id="resetLab">Reset Lab</button>
+            <div class="header-actions">
+              <select id="labScenarioSelect" aria-label="Choose lab scenario" style="padding:0.4rem 0.6rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text)"></select>
+              <button class="button secondary" id="resetLab">Reset Lab</button>
+            </div>
           </header>
           <div class="lab-grid">
             <article class="panel lab-main">
-              <div class="panel-heading"><div><p class="eyebrow">Incident Response</p><h2>Suspicious Sign-In</h2></div><span class="status-pill alert">Active Alert</span></div>
-              <div class="lab-map" aria-label="Network scenario diagram"><div class="map-node endpoint">Remote User</div><div class="map-link"></div><div class="map-node firewall">Firewall</div><div class="map-link"></div><div class="map-node identity">Identity Provider</div><div class="map-node server">File Server</div></div>
-              <div class="evidence-panel"><h3>Evidence</h3><ul><li>Impossible travel sign-in from Boston and Berlin within 11 minutes.</li><li>MFA push accepted after five denied prompts.</li><li>New inbox forwarding rule created for finance approvals.</li><li>File server access spike from the same identity.</li></ul></div>
+              <div class="panel-heading"><div><p class="eyebrow" id="labEyebrow">Lab</p><h2 id="labTitle">Scenario</h2></div><span class="status-pill alert" id="labStatus">Active</span></div>
+              <p id="labDescription" style="margin:0.5rem 0;font-size:0.9rem;line-height:1.5"></p>
+              <div class="evidence-panel"><h3>Evidence</h3><ul id="labEvidence"></ul></div>
             </article>
             <article class="panel checklist-panel">
               <div class="panel-heading"><div><p class="eyebrow">Containment Checklist</p><h2>Choose Actions</h2></div><span id="labScore">0/4</span></div>
@@ -304,20 +314,88 @@
           </div>
         </section>
 
+        <!-- EXAMS -->
         <section class="view" id="exams" aria-labelledby="exams-title">
-          <header class="page-header compact-header"><div><p class="eyebrow">Timed Review</p><h1 id="exams-title">Mock Exams</h1><p class="header-copy">Schedule full-length exams, review misses, and track readiness trends.</p></div></header>
-          <div class="exam-grid">
-            <article class="panel exam-card strong"><p class="eyebrow">Recommended</p><h2>90-question Readiness Exam</h2><p>Mixed SY0-701 objectives with final score, domain breakdown, and review list.</p><button class="button primary">Schedule Exam</button></article>
-            <article class="panel exam-card"><p class="eyebrow">Quick Check</p><h2>25-question Weak Area Drill</h2><p>Focused on Governance, Risk, and Compliance misses.</p><button class="button secondary">Start Drill</button></article>
-            <article class="panel exam-card"><p class="eyebrow">Review</p><h2>Missed Questions</h2><p>18 explanations waiting from your last two sessions.</p><button class="button secondary">Open Review</button></article>
+          <header class="page-header compact-header">
+            <div><p class="eyebrow">Timed Review</p><h1 id="exams-title">Mock Exams</h1><p class="header-copy">Take timed mock exams modeled after the SY0-701 format.</p></div>
+          </header>
+
+          <!-- Exam start screen -->
+          <div id="examStart">
+            <div class="exam-grid">
+              <article class="panel exam-card strong">
+                <p class="eyebrow">Full Exam</p>
+                <h2>90-Question Mock Exam</h2>
+                <p>Timed 90-minute session covering all SY0-701 domains. Scored on the CompTIA 100–900 scale. Passing: 750.</p>
+                <button class="button primary" id="startExam">Start Exam</button>
+              </article>
+              <article class="panel exam-card">
+                <p class="eyebrow">Quick Check</p>
+                <h2>25-Question Weak Area Drill</h2>
+                <p>Shorter session focused on your weakest domains based on quiz history.</p>
+                <button class="button secondary" id="startQuickExam">Start Drill</button>
+              </article>
+            </div>
+
+            <article class="panel" style="margin-top:1rem">
+              <div class="panel-heading"><div><p class="eyebrow">History</p><h2>Previous Exams</h2></div></div>
+              <div id="examHistory"><p>No previous exams. Take your first mock exam above.</p></div>
+            </article>
+          </div>
+
+          <!-- Exam in-progress -->
+          <div id="examActive" style="display:none">
+            <article class="panel" style="margin-bottom:1rem">
+              <div class="panel-heading">
+                <div><p class="eyebrow" id="examProgressLabel">Exam In Progress</p><h2 id="examTimer">90:00</h2></div>
+                <div><span id="examCounter">Question 1 / 90</span>&nbsp;&nbsp;<span>Score: <strong id="examScoreDisplay">0/0</strong></span></div>
+              </div>
+            </article>
+            <div class="study-layout">
+              <article class="panel question-panel">
+                <div class="question-meta">
+                  <span id="examQuestionCounter">1 / 90</span>
+                  <span>Objective <strong id="examQuestionObj"></strong></span>
+                  <span id="examQuestionDomain"></span>
+                </div>
+                <h2 id="examQuestionText"></h2>
+                <div id="examAnswers"></div>
+              </article>
+              <aside class="panel explanation-panel">
+                <p class="eyebrow">Explanation</p>
+                <div id="examExplanation">Choose an answer to see the explanation.</div>
+                <div class="split-actions">
+                  <button class="button primary" id="examNext">Next Question</button>
+                  <button class="button secondary" id="examFinish" style="margin-left:0.5rem">Finish Early</button>
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          <!-- Exam results -->
+          <div id="examResults" style="display:none">
+            <article class="panel">
+              <div class="panel-heading"><div><p class="eyebrow">Results</p><h2>Exam Complete</h2></div></div>
+              <div style="text-align:center;padding:1rem 0">
+                <div style="font-size:2.5rem;font-weight:700" id="examResultScore">0%</div>
+                <div style="font-size:1.1rem;margin:0.5rem 0" id="examResultPassFail"></div>
+                <div id="examResultDetails" style="margin:1rem 0;font-size:0.95rem"></div>
+              </div>
+              <div id="examDomainBreakdown" style="margin:1rem 0"></div>
+              <div class="split-actions" style="margin-top:1rem">
+                <button class="button primary" id="examBackToStart">Back to Exams</button>
+              </div>
+            </article>
           </div>
         </section>
 
+        <!-- NOTES -->
         <section class="view" id="notes" aria-labelledby="notes-title">
           <header class="page-header compact-header"><div><p class="eyebrow">Notes</p><h1 id="notes-title">Study Notes</h1><p class="header-copy">High-yield reminders pulled from weak areas and lab debriefs.</p></div></header>
           <article class="panel notes-panel"><ul class="notes-list large" id="notesList"></ul></article>
         </section>
 
+        <!-- PROGRESS -->
         <section class="view" id="progress" aria-labelledby="progress-title">
           <header class="page-header compact-header"><div><p class="eyebrow">Analytics</p><h1 id="progress-title">Progress</h1><p class="header-copy">See mastery by domain and the exact objectives that deserve attention next.</p></div></header>
           <div class="progress-grid">
@@ -327,11 +405,30 @@
           </div>
         </section>
 
+        <!-- SETTINGS -->
         <section class="view" id="settings" aria-labelledby="settings-title">
           <header class="page-header compact-header"><div><p class="eyebrow">Settings</p><h1 id="settings-title">Preferences</h1><p class="header-copy">Tune the study environment for longer sessions.</p></div></header>
+
           <article class="panel settings-panel">
             <div><p class="eyebrow">Appearance</p><h2>Theme</h2><p id="themeStatus">Light mode enabled</p></div>
             <label class="switch"><input type="checkbox" id="themeToggle" /><span>Dark mode</span></label>
+          </article>
+
+          <article class="panel settings-panel" style="margin-top:1rem">
+            <div><p class="eyebrow">Your Stats</p><h2>Study Progress</h2></div>
+            <div id="settingsStats" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;font-size:0.9rem"></div>
+          </article>
+
+          <article class="panel settings-panel" style="margin-top:1rem">
+            <div><p class="eyebrow">Data</p><h2>Export / Import</h2><p style="font-size:0.9rem;color:var(--text-muted)">Save your progress to a file or restore from a backup.</p></div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
+              <button class="button primary" id="exportProgress">Export Progress</button>
+              <label class="button secondary" style="cursor:pointer">
+                Import Progress
+                <input type="file" id="importProgress" accept=".json" style="display:none" />
+              </label>
+              <button class="button secondary" id="resetProgress" style="color:var(--danger)">Reset All Progress</button>
+            </div>
           </article>
         </section>
       </main>
