@@ -455,7 +455,7 @@ function renderDashboard() {
     const reviewed = Object.keys(state.flashcardConfidence).length;
     flashP.textContent = reviewed >= flashcards.length
       ? "All cards reviewed. Confidence levels are tracked in your progress."
-      : `${flashcards.length - reviewed} cards remaining. Keep reviewing daily.";
+      : `${flashcards.length - reviewed} cards remaining. Keep reviewing daily.`;
   }
 
   // Missed questions card in exams
