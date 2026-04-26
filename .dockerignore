@@ -1,0 +1,9 @@
+node_modules
+.git
+.github
+*.md
+LICENSE
+docs/*.png
+.dockerignore
+Dockerfile
+docker-compose.yml
