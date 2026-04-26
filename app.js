@@ -170,7 +170,7 @@ const questionVariants = [
   "Which choice is the best fit for the stated requirement?",
 ];
 
-const questionBank = questionTemplates.slice(0, 75).flatMap((template, templateIndex) => {
+const questionBank = questionTemplates.flatMap((template, templateIndex) => {
   const [objective, domain, scenario, correct, distractors, explanation] = template;
   return questionVariants.map((variant, variantIndex) => {
     const answers = [correct, ...distractors];
@@ -218,11 +218,6 @@ const pbqZones = ["Screened subnet", "Internal LAN", "Jump server", "Guest netwo
 // ────────────────────────────────────────────────────────────────
 //  COMPUTED STATS
 // ────────────────────────────────────────────────────────────────
-
-function getDomainForObjective(obj) {
-  const major = obj.split(".")[0];
-  return domainMap.find(d => d.id === Number(major));
-}
 
 function computeDomainProgress() {
   return domainMap.map((d) => {
