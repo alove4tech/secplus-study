@@ -1,4 +1,16 @@
-# Screenshots tracked in docs/
-# *.png
+# OS files
 .DS_Store
 Thumbs.db
+
+# Editor artifacts
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Node (if ever used for tooling)
+node_modules/
+
+# Logs
+*.log
