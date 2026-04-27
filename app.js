@@ -585,6 +585,14 @@ let reviewingWeakAreas = false;
 let currentPbqScenario = 0;
 let currentLabScenario = 0;
 
+// Quiz session (bounded length)
+let quizSession = {
+  active: false,
+  pool: [],       // shuffled question indices for this session
+  index: 0,       // current position in pool
+  length: 0,      // total questions in this session
+};
+
 // Exam state
 let examState = {
   active: false,
@@ -755,9 +763,14 @@ function renderStudyPlan() {
 
 function renderQuestion() {
   const question = questionBank[currentQuestion];
-  document.querySelector("#questionCounter").textContent = reviewingWeakAreas
-    ? `Review ${currentQuestion + 1} (weak areas)`
-    : `Question ${currentQuestion + 1} of ${questionBank.length}`;
+  const counterEl = document.querySelector("#questionCounter");
+  if (quizSession.active) {
+    counterEl.textContent = `Question ${quizSession.index + 1} of ${quizSession.length}`;
+  } else if (reviewingWeakAreas) {
+    counterEl.textContent = `Review ${quizSession.index + 1} (weak areas)`;
+  } else {
+    counterEl.textContent = `Question ${currentQuestion + 1} of ${questionBank.length}`;
+  }
   document.querySelector("#questionObjective").textContent = question.objective;
   document.querySelector("#questionDomain").textContent = question.domain;
   document.querySelector("#questionText").textContent = question.text;
@@ -798,6 +811,7 @@ function chooseAnswer(index) {
   document.querySelector("#explanation").textContent = question.explanation;
 }
 
+
 function getWeakAreaQuestionIds() {
   const missed = new Set(
     state.quizResults.filter(r => !r.correct).map(r => Math.floor(r.id / 4))
@@ -816,6 +830,76 @@ function getWeakAreaQuestionIds() {
     }
   });
   return ids.length > 0 ? ids : null;
+}
+
+// ────────────────────────────────────────────────────────────────
+//  QUIZ SESSION MANAGEMENT
+// ────────────────────────────────────────────────────────────────
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz(length) {
+  const totalTemplates = Math.floor(questionBank.length / 4);
+  const count = Math.min(length, totalTemplates);
+  const templateIds = shuffle(Array.from({ length: totalTemplates }, (_, i) => i)).slice(0, count);
+  const pool = templateIds.map(tid => tid * 4 + Math.floor(Math.random() * 4));
+
+  quizSession = { active: true, pool, index: 0, length: pool.length };
+  reviewingWeakAreas = false;
+  sessionCorrect = 0;
+  sessionAnswered = 0;
+  sessionStartTs = Date.now();
+  currentQuestion = pool[0];
+
+  document.querySelector("#quizLengthPicker").style.display = "none";
+  document.querySelector("#quizArea").style.display = "";
+  renderQuestion();
+}
+
+function startReviewQuiz(length) {
+  const allIds = getWeakAreaQuestionIds();
+  if (!allIds || allIds.length === 0) return;
+  const shuffled = shuffle(allIds);
+  const pool = shuffled.slice(0, Math.min(length, shuffled.length));
+
+  quizSession = { active: true, pool, index: 0, length: pool.length };
+  reviewingWeakAreas = true;
+  sessionCorrect = 0;
+  sessionAnswered = 0;
+  sessionStartTs = Date.now();
+  currentQuestion = pool[0];
+
+  document.querySelector("#quizLengthPicker").style.display = "none";
+  document.querySelector("#quizArea").style.display = "";
+  renderQuestion();
+}
+
+function endQuizSession() {
+  if (sessionAnswered > 0) {
+    state.quizSessions.push({
+      date: new Date().toISOString(),
+      total: sessionAnswered,
+      correct: sessionCorrect,
+      duration: Math.round((Date.now() - sessionStartTs) / 1000),
+    });
+    saveState();
+  }
+  quizSession = { active: false, pool: [], index: 0, length: 0 };
+  reviewingWeakAreas = false;
+  sessionCorrect = 0;
+  sessionAnswered = 0;
+  currentQuestion = 0;
+
+  document.querySelector("#quizLengthPicker").style.display = "";
+  document.querySelector("#quizArea").style.display = "none";
+  renderDashboard();
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -1283,14 +1367,22 @@ menuToggle?.addEventListener("click", () => {
 
 // Quiz navigation
 document.querySelector("#nextQuestion").addEventListener("click", () => {
-  if (reviewingWeakAreas) {
-    const ids = getWeakAreaQuestionIds();
-    if (ids && ids.length > 0) {
-      currentQuestion = ids[Math.floor(Math.random() * ids.length)];
-    } else {
-      reviewingWeakAreas = false;
-      currentQuestion = (currentQuestion + 1) % questionBank.length;
+  if (quizSession.active) {
+    quizSession.index++;
+    if (quizSession.index >= quizSession.length) {
+      // Session complete — capture stats before ending
+      const total = quizSession.length;
+      const correct = sessionCorrect;
+      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+      const pass = pct >= 83;
+      const duration = Math.round((Date.now() - sessionStartTs) / 1000);
+      const mins = Math.floor(duration / 60);
+      const secs = duration % 60;
+      endQuizSession();
+      alert(`Quiz Complete!\n\nScore: ${correct}/${total} (${pct}%)\nTime: ${mins}m ${secs}s\n${pass ? '✓ PASSED' : '✗ Keep practicing'}`);
+      return;
     }
+    currentQuestion = quizSession.pool[quizSession.index];
   } else {
     currentQuestion = (currentQuestion + 1) % questionBank.length;
   }
@@ -1307,27 +1399,16 @@ document.querySelector("#reviewQuestion").addEventListener("click", () => {
 });
 
 document.querySelector("#randomQuestion").addEventListener("click", () => {
-  reviewingWeakAreas = false;
+  if (quizSession.active) {
+    // Can't go random during a session - just pick next from pool
+    return;
+  }
   currentQuestion = Math.floor(Math.random() * questionBank.length);
   renderQuestion();
 });
 
 document.querySelector("#resetQuiz").addEventListener("click", () => {
-  if (sessionAnswered > 0) {
-    state.quizSessions.push({
-      date: new Date().toISOString(),
-      total: sessionAnswered,
-      correct: sessionCorrect,
-      duration: Math.round((Date.now() - sessionStartTs) / 1000),
-    });
-    saveState();
-  }
-  sessionCorrect = 0;
-  sessionAnswered = 0;
-  sessionStartTs = Date.now();
-  reviewingWeakAreas = false;
-  currentQuestion = 0;
-  renderQuestion();
+  endQuizSession();
 });
 
 document.querySelector("#reviewWeakAreas").addEventListener("click", () => {
@@ -1336,11 +1417,15 @@ document.querySelector("#reviewWeakAreas").addEventListener("click", () => {
     alert("No weak areas found. Answer some questions first!");
     return;
   }
-  reviewingWeakAreas = true;
-  currentQuestion = ids[Math.floor(Math.random() * ids.length)];
-  sessionCorrect = 0;
-  sessionAnswered = 0;
-  renderQuestion();
+  startReviewQuiz(Math.min(ids.length, 20));
+});
+
+// Quiz length picker buttons
+document.querySelectorAll("[data-quiz-length]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const length = parseInt(btn.dataset.quizLength, 10);
+    startQuiz(length);
+  });
 });
 
 // Confidence chips
@@ -1437,11 +1522,18 @@ themeToggle.addEventListener("change", () => {
 loadState();
 
 document.querySelector("#bankSize").textContent = questionBank.length;
+
+loadState();
+
+document.querySelector("#bankSize").textContent = questionBank.length;
 document.querySelector("#practiceBankSize").textContent = questionBank.length;
+
+// Start with picker visible, quiz hidden
+document.querySelector("#quizLengthPicker").style.display = "";
+document.querySelector("#quizArea").style.display = "none";
 
 renderDashboard();
 renderStudyPlan();
-renderQuestion();
 renderFlashcard();
 renderPbq();
 renderLabChecklist();

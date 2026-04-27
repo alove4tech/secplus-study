@@ -124,7 +124,7 @@
               <p>Test your knowledge with a short quiz from the <strong id="bankSize">300</strong>-question bank.</p>
               <p id="reviewQueueCount" style="margin:0.3rem 0;font-size:0.85rem;color:var(--text-muted)">Review queue: 0 items</p>
               <div class="mini-scores"><span>Last Score <strong>–</strong></span><span>Best Score <strong>–</strong></span></div>
-              <button class="button primary" data-view-link="practice">Start Quiz</button>
+              <button class="button primary" data-view-link="practice">Choose Quiz</button>
             </article>
 
             <article class="panel flash-card">
@@ -201,11 +201,22 @@
             <div class="header-actions">
               <button class="button secondary" id="reviewWeakAreas">Review Weak Areas</button>
               <button class="button secondary" id="randomQuestion">Random Question</button>
-              <button class="button secondary" id="resetQuiz">Reset Score</button>
+              <button class="button secondary" id="resetQuiz">End Session</button>
             </div>
           </header>
 
-          <div class="study-layout">
+          <!-- Quiz length picker -->
+          <div class="quiz-length-picker" id="quizLengthPicker">
+            <p class="eyebrow">Choose Quiz Length</p>
+            <div class="quiz-length-options">
+              <button class="button secondary" data-quiz-length="5">5 Questions</button>
+              <button class="button secondary" data-quiz-length="10">10 Questions</button>
+              <button class="button secondary" data-quiz-length="15">15 Questions</button>
+              <button class="button secondary" data-quiz-length="20">20 Questions</button>
+            </div>
+          </div>
+
+          <div class="study-layout" id="quizArea" style="display:none;">
             <article class="panel question-panel">
               <div class="question-meta">
                 <span id="questionCounter">Question 1 of 300</span>
