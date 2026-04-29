@@ -1522,10 +1522,6 @@ themeToggle.addEventListener("change", () => {
 loadState();
 
 document.querySelector("#bankSize").textContent = questionBank.length;
-
-loadState();
-
-document.querySelector("#bankSize").textContent = questionBank.length;
 document.querySelector("#practiceBankSize").textContent = questionBank.length;
 
 // Start with picker visible, quiz hidden
