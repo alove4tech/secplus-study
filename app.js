@@ -2,7 +2,82 @@
 //  STATE & STORAGE
 // ────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "secplus-study-progress-v4";
+const LEGACY_STORAGE_KEY = "secplus-study-progress-v4";
+const LEGACY_MIGRATED_KEY = "secplus-study-legacy-migrated-v1";
+const USER_KEY = "secplus-study-current-user";
+const USERS_KEY = "secplus-study-users-v1";
+
+let currentUser = loadCurrentUser();
+
+function normalizeUsername(username) {
+  return String(username || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getUserStorageKey(username) {
+  return `${LEGACY_STORAGE_KEY}:user:${normalizeUsername(username)}`;
+}
+
+function loadCurrentUser() {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.username) return null;
+    return {
+      username: normalizeUsername(parsed.username),
+      displayName: parsed.displayName || parsed.username,
+      lastLogin: parsed.lastLogin || Date.now(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getSavedUsers() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUserProfile(user) {
+  const users = getSavedUsers().filter((item) => item.username !== user.username);
+  users.push(user);
+  users.sort((a, b) => (a.displayName || a.username).localeCompare(b.displayName || b.username));
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function migrateLegacyProgress(user) {
+  const userKey = getUserStorageKey(user.username);
+  if (localStorage.getItem(userKey) || localStorage.getItem(LEGACY_MIGRATED_KEY)) return;
+  const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (legacy) {
+    localStorage.setItem(userKey, legacy);
+    localStorage.setItem(LEGACY_MIGRATED_KEY, user.username);
+  }
+}
+
+function coerceState(parsed) {
+  const base = defaultState();
+  const next = { ...base, ...(parsed || {}) };
+  next.quizResults = Array.isArray(next.quizResults) ? next.quizResults : [];
+  next.quizSessions = Array.isArray(next.quizSessions) ? next.quizSessions : [];
+  next.labScores = Array.isArray(next.labScores) ? next.labScores : [];
+  next.pbqScores = Array.isArray(next.pbqScores) ? next.pbqScores : [];
+  next.streakDays = Array.isArray(next.streakDays) ? next.streakDays : [];
+  next.reviewQueue = Array.isArray(next.reviewQueue) ? next.reviewQueue : [];
+  next.examResults = Array.isArray(next.examResults) ? next.examResults : [];
+  next.flashcardConfidence = next.flashcardConfidence && typeof next.flashcardConfidence === "object" ? next.flashcardConfidence : {};
+  next.studyPlanDone = next.studyPlanDone && typeof next.studyPlanDone === "object" ? next.studyPlanDone : {};
+  next.notes = Array.isArray(next.notes) ? next.notes : base.notes;
+  return next;
+}
 
 function defaultState() {
   return {
@@ -28,30 +103,24 @@ function defaultState() {
 let state;
 
 function loadState() {
+  if (!currentUser) {
+    state = defaultState();
+    return;
+  }
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const base = defaultState();
-      state = { ...base, ...parsed };
-      state.quizResults = Array.isArray(state.quizResults) ? state.quizResults : [];
-      state.quizSessions = Array.isArray(state.quizSessions) ? state.quizSessions : [];
-      state.labScores = Array.isArray(state.labScores) ? state.labScores : [];
-      state.pbqScores = Array.isArray(state.pbqScores) ? state.pbqScores : [];
-      state.streakDays = Array.isArray(state.streakDays) ? state.streakDays : [];
-      state.reviewQueue = Array.isArray(state.reviewQueue) ? state.reviewQueue : [];
-      state.examResults = Array.isArray(state.examResults) ? state.examResults : [];
-    } else {
-      state = defaultState();
-    }
+    migrateLegacyProgress(currentUser);
+    const raw = localStorage.getItem(getUserStorageKey(currentUser.username));
+    state = raw ? coerceState(JSON.parse(raw)) : defaultState();
   } catch {
     state = defaultState();
   }
 }
 
 function saveState() {
+  if (!currentUser) return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(getUserStorageKey(currentUser.username), JSON.stringify(state));
   } catch { /* quota exceeded */ }
 }
 
@@ -352,6 +421,86 @@ const pbqScenarios = [
     perfectFeedback: "All matches correct. Certificate selection depends on scope, trust requirements, and validation level.",
     partialFeedback: "Score: {score}/4. Wildcard covers subdomains, self-signed is for internal use, code signing proves software origin, and EV provides highest assurance for public sites.",
   },
+  {
+    id: "wireless-authentication",
+    title: "Select the Best Wireless Security Controls",
+    description: "A branch office is replacing a shared WPA2 password with enterprise wireless controls. Match each requirement to the best configuration choice.",
+    strategy: [
+      "Enterprise wireless usually uses 802.1X with RADIUS.",
+      "Certificate-based authentication provides stronger assurance than shared passwords.",
+      "Guest access should be segmented away from corporate resources.",
+    ],
+    hint: "Think identity-based authentication for employees, isolation for guests, and modern encryption for wireless frames.",
+    items: [
+      { item: "Authenticate employees with individual credentials", answer: "WPA3-Enterprise / 802.1X" },
+      { item: "Validate devices with client certificates", answer: "EAP-TLS" },
+      { item: "Keep visitors away from internal file shares", answer: "Guest VLAN" },
+      { item: "Centralize access decisions and accounting", answer: "RADIUS" },
+    ],
+    zones: ["WPA3-Enterprise / 802.1X", "EAP-TLS", "Guest VLAN", "RADIUS", "WPS"],
+    perfectFeedback: "Correct. You selected enterprise authentication, certificate-based EAP, isolated guests, and centralized AAA.",
+    partialFeedback: "Score: {score}/4. Use 802.1X/RADIUS for enterprise Wi-Fi, EAP-TLS for certificates, and a separate guest VLAN for visitors.",
+  },
+  {
+    id: "risk-treatment",
+    title: "Match Risks to Treatment Strategies",
+    description: "A security steering committee is deciding how to handle four documented risks. Choose the best risk response for each case.",
+    strategy: [
+      "Mitigate by reducing likelihood or impact with controls.",
+      "Transfer by shifting financial impact to another party, such as insurance.",
+      "Avoid by stopping the risky activity entirely; accept when risk is within appetite.",
+    ],
+    hint: "Focus on the action being taken: reduce, shift, stop, or knowingly tolerate.",
+    items: [
+      { item: "Buy cyber insurance for residual ransomware costs", answer: "Transfer" },
+      { item: "Deploy MFA to reduce account takeover likelihood", answer: "Mitigate" },
+      { item: "Retire an unsupported public-facing application", answer: "Avoid" },
+      { item: "Document low-impact printer outage risk below tolerance", answer: "Accept" },
+    ],
+    zones: ["Accept", "Avoid", "Mitigate", "Transfer", "Ignore"],
+    perfectFeedback: "Excellent risk handling. Each response matches the actual treatment being applied.",
+    partialFeedback: "Score: {score}/4. Mitigation reduces risk, transfer shifts impact, avoidance stops the activity, and acceptance documents tolerable risk.",
+  },
+  {
+    id: "log-triage",
+    title: "Prioritize Security Logs for Triage",
+    description: "A SOC analyst has four alerts during a busy shift. Assign the most appropriate priority based on business impact and exploitability.",
+    strategy: [
+      "Active compromise of privileged or production systems should be highest priority.",
+      "Internet-facing critical vulnerabilities outrank routine policy events.",
+      "Low-confidence or low-impact events can be handled after confirmed incidents.",
+    ],
+    hint: "Rank by urgency: confirmed compromise, critical exposure, suspicious behavior, then routine events.",
+    items: [
+      { item: "Domain admin account successfully logs in from impossible travel", answer: "P1 - Critical" },
+      { item: "Internet-facing VPN has known exploited critical CVE", answer: "P2 - High" },
+      { item: "User reports one suspicious email with no click", answer: "P3 - Medium" },
+      { item: "Monthly guest Wi-Fi acceptable-use violation", answer: "P4 - Low" },
+    ],
+    zones: ["P1 - Critical", "P2 - High", "P3 - Medium", "P4 - Low"],
+    perfectFeedback: "Correct prioritization. Confirmed privileged compromise gets immediate response, followed by exploitable perimeter risk.",
+    partialFeedback: "Score: {score}/4. Prioritize confirmed compromise and high-impact exposed systems before lower-impact suspicious or policy events.",
+  },
+  {
+    id: "cloud-shared-responsibility",
+    title: "Apply the Cloud Shared Responsibility Model",
+    description: "A company is moving workloads into SaaS, PaaS, and IaaS. Match each responsibility to the party that normally owns it.",
+    strategy: [
+      "Cloud providers secure the physical data center and underlying cloud infrastructure.",
+      "Customers always own data classification, identity, and access decisions.",
+      "In IaaS, customers manage guest OS patching; in SaaS, the provider usually manages the app platform.",
+    ],
+    hint: "Ask whether the task is below the cloud abstraction layer or tied to customer data, users, and configurations.",
+    items: [
+      { item: "Protect the physical hypervisor hosts", answer: "Cloud provider" },
+      { item: "Classify sensitive customer records", answer: "Customer" },
+      { item: "Patch the guest OS on an IaaS VM", answer: "Customer" },
+      { item: "Maintain availability of a SaaS email platform", answer: "Shared / service-dependent" },
+    ],
+    zones: ["Cloud provider", "Customer", "Shared / service-dependent", "Third-party auditor"],
+    perfectFeedback: "Exactly right. Provider-owned infrastructure is separated from customer-owned data, identity, and IaaS guest responsibilities.",
+    partialFeedback: "Score: {score}/4. Providers own the cloud infrastructure; customers own their data, access, and guest systems unless the service model shifts that duty.",
+  },
 ];
 
 // ────────────────────────────────────────────────────────────────
@@ -458,6 +607,106 @@ const labScenarios = [
     totalCorrect: 4,
     perfectFeedback: "All systems correctly segmented. Critical data and ICS systems are now isolated from less trusted networks.",
     partialFeedback: "Score: {score}/4. Public services go in a screened subnet, sensitive data needs restricted segments, and ICS must be isolated from corporate networks.",
+  },
+  {
+    id: "phishing-triage",
+    eyebrow: "Social Engineering",
+    title: "Phishing Report Triage",
+    status: "Mailbox Alert",
+    description: "Several employees report a suspicious payroll email. Pick the actions that contain the campaign and preserve useful evidence.",
+    evidence: [
+      "Email claims payroll direct deposits will fail unless users sign in within one hour.",
+      "The sender display name matches HR, but the domain is payro11-benefits.example.",
+      "URL rewriting logs show five recipients clicked the link.",
+      "One user entered credentials before reporting the message.",
+    ],
+    hint: "Handle the mailbox campaign, protect clicked users, preserve headers and URLs, and avoid tipping off attackers before containment.",
+    actions: [
+      { text: "Quarantine the message across all mailboxes", correct: true },
+      { text: "Reset credentials and revoke sessions for users who submitted credentials", correct: true },
+      { text: "Preserve full message headers, URLs, and attachment hashes", correct: true },
+      { text: "Block the phishing domain in DNS/web filtering", correct: true },
+      { text: "Reply to the attacker asking them to stop", correct: false },
+      { text: "Delete reported emails without collecting indicators", correct: false },
+    ],
+    totalCorrect: 4,
+    perfectFeedback: "Great triage. You contained the campaign, protected affected identities, kept evidence, and blocked the infrastructure.",
+    partialFeedback: "Score: {score}/4. Phishing triage should quarantine messages, protect clicked users, preserve indicators, and block malicious infrastructure.",
+  },
+  {
+    id: "cloud-storage-exposure",
+    eyebrow: "Cloud Security",
+    title: "Public Storage Bucket Exposure",
+    status: "Data Exposure",
+    description: "A cloud storage bucket containing customer exports was found publicly readable. Choose the best immediate and follow-up actions.",
+    evidence: [
+      "Bucket policy allows anonymous read access from the internet.",
+      "Access logs show downloads from unknown IP addresses overnight.",
+      "The bucket contains CSV exports with names, emails, and partial account IDs.",
+      "No object-level encryption requirement is enforced on new uploads.",
+    ],
+    hint: "Stop public access, preserve logs, scope data exposure, rotate potentially exposed secrets, and improve preventive controls.",
+    actions: [
+      { text: "Disable public access and replace the bucket policy with least-privilege access", correct: true },
+      { text: "Preserve access logs and identify which objects were downloaded", correct: true },
+      { text: "Notify privacy/legal stakeholders for breach assessment", correct: true },
+      { text: "Require encryption and policy checks for future uploads", correct: true },
+      { text: "Make a copy of the bucket public so analysts can review it faster", correct: false },
+      { text: "Delete all logs to remove evidence of the exposure", correct: false },
+    ],
+    totalCorrect: 4,
+    perfectFeedback: "Strong cloud response. You contained exposure, preserved logs, scoped impact, engaged stakeholders, and improved controls.",
+    partialFeedback: "Score: {score}/4. Exposed storage requires immediate access removal, evidence preservation, data scoping, stakeholder notification, and preventive policy updates.",
+  },
+  {
+    id: "wireless-rogue-ap",
+    eyebrow: "Wireless Security",
+    title: "Rogue Access Point Investigation",
+    status: "Rogue Device",
+    description: "Wireless monitoring detects an access point spoofing the corporate SSID near the office. Select the best investigation and containment steps.",
+    evidence: [
+      "BSSID differs from approved controller inventory but broadcasts the corporate SSID.",
+      "Signal strength is strongest near the public lobby.",
+      "Several employee devices attempted to associate with the rogue AP.",
+      "The AP uses a captive portal asking users to re-enter corporate credentials.",
+    ],
+    hint: "Verify and locate the device, protect users from credential theft, and remove the rogue system without disrupting legitimate infrastructure.",
+    actions: [
+      { text: "Compare the BSSID against the approved wireless inventory", correct: true },
+      { text: "Physically locate and disconnect the rogue access point", correct: true },
+      { text: "Reset credentials for users who submitted them to the captive portal", correct: true },
+      { text: "Update wireless IDS rules and alert users about the spoofed SSID", correct: true },
+      { text: "Disable all corporate APs permanently", correct: false },
+      { text: "Ignore it because the SSID name matches the corporate network", correct: false },
+    ],
+    totalCorrect: 4,
+    perfectFeedback: "Correct response. You verified the rogue AP, located it, protected affected users, and improved wireless monitoring.",
+    partialFeedback: "Score: {score}/4. Rogue AP response requires inventory validation, location/removal, credential protection, and wireless IDS/user awareness updates.",
+  },
+  {
+    id: "vulnerability-prioritization",
+    eyebrow: "Vulnerability Management",
+    title: "Patch Prioritization Sprint",
+    status: "Remediation Queue",
+    description: "A weekly vulnerability scan found several issues. Select the actions that prioritize by risk, exploitability, and business impact.",
+    evidence: [
+      "Internet-facing VPN appliance has a CVSS 9.8 vulnerability listed in CISA KEV.",
+      "Internal lab server has a CVSS 7.5 vulnerability but is isolated from production.",
+      "A production database is missing a security patch with no known exploit yet.",
+      "A legacy application cannot be patched until a vendor update is released.",
+    ],
+    hint: "Prioritize exploited internet-facing systems first, then production criticality. Use compensating controls when patching is not possible.",
+    actions: [
+      { text: "Emergency patch or mitigate the internet-facing VPN appliance first", correct: true },
+      { text: "Apply compensating controls for the legacy app until a vendor patch exists", correct: true },
+      { text: "Schedule production database patching during the next approved maintenance window", correct: true },
+      { text: "Document risk decisions and verify remediation with a follow-up scan", correct: true },
+      { text: "Patch the isolated lab server before exploited internet-facing systems", correct: false },
+      { text: "Close all findings without validation because scans can be noisy", correct: false },
+    ],
+    totalCorrect: 4,
+    perfectFeedback: "Excellent prioritization. You addressed exploited perimeter risk first, used compensating controls, planned production patching, and verified remediation.",
+    partialFeedback: "Score: {score}/4. Prioritize by exploitability, exposure, and business impact; document exceptions and verify fixes with rescans.",
   },
 ];
 
@@ -613,7 +862,13 @@ const sidebar = document.querySelector(".sidebar");
 const menuToggle = document.querySelector("#menuToggle");
 const navButtons = document.querySelectorAll("[data-view]");
 const viewLinks = document.querySelectorAll("[data-view-link]");
-const themeToggle = document.querySelector("#themeToggle");
+const loginView = document.querySelector("#loginView");
+const loginForm = document.querySelector("#loginForm");
+const loginNameInput = document.querySelector("#loginName");
+const loginError = document.querySelector("#loginError");
+const savedUsersList = document.querySelector("#savedUsersList");
+const currentUserName = document.querySelector("#currentUserName");
+const logoutButton = document.querySelector("#logoutButton");
 
 function setView(viewId) {
   document.querySelectorAll(".view").forEach((view) => {
@@ -631,6 +886,84 @@ function setView(viewId) {
   if (viewId === "settings") renderSettings();
   if (viewId === "exams") renderExamStart();
 }
+
+function escapeHtml(value) {
+  return String(value || "").replace(/[&<>'"]/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;",
+  }[char]));
+}
+
+function renderSavedUsers() {
+  if (!savedUsersList) return;
+  const users = getSavedUsers();
+  savedUsersList.innerHTML = users.length
+    ? users.map((user) => `<button type="button" class="saved-user" data-login-user="${escapeHtml(user.username)}">${escapeHtml(user.displayName || user.username)}</button>`).join("")
+    : '<p class="login-hint">No local profiles yet. Enter a name to create one.</p>';
+  savedUsersList.querySelectorAll("[data-login-user]").forEach((button) => {
+    button.addEventListener("click", () => loginUser(button.dataset.loginUser));
+  });
+}
+
+function updateCurrentUserDisplay() {
+  document.querySelectorAll("[data-current-user-name]").forEach((el) => {
+    el.textContent = currentUser?.displayName || "Not signed in";
+  });
+  if (currentUserName) currentUserName.textContent = currentUser?.displayName || "Not signed in";
+}
+
+function requireLogin() {
+  document.body.classList.toggle("is-authenticated", Boolean(currentUser));
+  document.body.classList.toggle("is-locked", !currentUser);
+  updateCurrentUserDisplay();
+  if (!currentUser) renderSavedUsers();
+  return Boolean(currentUser);
+}
+
+function loginUser(username) {
+  const displayName = String(username || "").trim();
+  const normalized = normalizeUsername(displayName);
+  if (!normalized) {
+    if (loginError) loginError.textContent = "Enter a username to continue.";
+    return;
+  }
+
+  currentUser = { username: normalized, displayName, lastLogin: Date.now() };
+  localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+  saveUserProfile(currentUser);
+  loadState();
+  requireLogin();
+  initializeStudyApp();
+}
+
+function logoutUser() {
+  saveState();
+  localStorage.removeItem(USER_KEY);
+  currentUser = null;
+  state = defaultState();
+  requireLogin();
+}
+
+function initializeStudyApp() {
+  document.querySelector("#bankSize").textContent = questionBank.length;
+  document.querySelector("#practiceBankSize").textContent = questionBank.length;
+
+  document.querySelector("#quizLengthPicker").style.display = "";
+  document.querySelector("#quizArea").style.display = "none";
+
+  renderDashboard();
+  renderStudyPlan();
+  renderFlashcard();
+  renderPbq();
+  renderLabChecklist();
+  renderNotes();
+  renderSettings();
+  setView("dashboard");
+}
+
 
 // ────────────────────────────────────────────────────────────────
 //  RENDER: DASHBOARD
@@ -669,7 +1002,7 @@ function renderDashboard() {
     }
   }
 
-  const streakEl = document.querySelector(".sidebar-card strong");
+  const streakEl = document.querySelector(".streak-card strong");
   if (streakEl) streakEl.textContent = `${streak} Day${streak !== 1 ? "s" : ""}`;
 
   const topStats = document.querySelectorAll(".top-stat");
@@ -1277,6 +1610,7 @@ function renderNotes() {
 // ────────────────────────────────────────────────────────────────
 
 function renderSettings() {
+  updateCurrentUserDisplay();
   const statsEl = document.querySelector("#settingsStats");
   if (statsEl) {
     const flashReviewed = Object.keys(state.flashcardConfidence).length;
@@ -1323,9 +1657,9 @@ function importProgress(file) {
 }
 
 function resetProgress() {
-  if (!confirm("This will permanently delete all your study progress. Are you sure?")) return;
-  if (!confirm("Really delete everything? This cannot be undone.")) return;
-  localStorage.removeItem(STORAGE_KEY);
+  if (!confirm("This will permanently delete all progress for the signed-in user only. Are you sure?")) return;
+  if (!confirm("Really delete this user's progress? This cannot be undone.")) return;
+  if (currentUser) localStorage.removeItem(getUserStorageKey(currentUser.username));
   state = defaultState();
   saveState();
   currentQuestion = 0;
@@ -1335,17 +1669,6 @@ function resetProgress() {
   renderQuestion();
   renderSettings();
   renderProgress();
-}
-
-// ────────────────────────────────────────────────────────────────
-//  THEME
-// ────────────────────────────────────────────────────────────────
-
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  localStorage.setItem("securityPlusTheme", theme);
-  themeToggle.checked = theme === "dark";
-  document.querySelector("#themeStatus").textContent = theme === "dark" ? "Dark mode enabled" : "Light mode enabled";
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -1510,29 +1833,18 @@ document.querySelector("#importProgress").addEventListener("change", (e) => {
 });
 document.querySelector("#resetProgress").addEventListener("click", resetProgress);
 
-// Theme
-themeToggle.addEventListener("change", () => {
-  applyTheme(themeToggle.checked ? "dark" : "light");
+// Auth
+loginForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  loginUser(loginNameInput?.value);
 });
+logoutButton?.addEventListener("click", logoutUser);
 
 // ────────────────────────────────────────────────────────────────
 //  INIT
 // ────────────────────────────────────────────────────────────────
 
-loadState();
-
-document.querySelector("#bankSize").textContent = questionBank.length;
-document.querySelector("#practiceBankSize").textContent = questionBank.length;
-
-// Start with picker visible, quiz hidden
-document.querySelector("#quizLengthPicker").style.display = "";
-document.querySelector("#quizArea").style.display = "none";
-
-renderDashboard();
-renderStudyPlan();
-renderFlashcard();
-renderPbq();
-renderLabChecklist();
-renderNotes();
-renderSettings();
-applyTheme(localStorage.getItem("securityPlusTheme") || "light");
+if (requireLogin()) {
+  loadState();
+  initializeStudyApp();
+}
