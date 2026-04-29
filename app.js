@@ -3,65 +3,6 @@
 // ────────────────────────────────────────────────────────────────
 
 const LEGACY_STORAGE_KEY = "secplus-study-progress-v4";
-const LEGACY_MIGRATED_KEY = "secplus-study-legacy-migrated-v1";
-const USER_KEY = "secplus-study-current-user";
-const USERS_KEY = "secplus-study-users-v1";
-
-let currentUser = loadCurrentUser();
-
-function normalizeUsername(username) {
-  return String(username || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function getUserStorageKey(username) {
-  return `${LEGACY_STORAGE_KEY}:user:${normalizeUsername(username)}`;
-}
-
-function loadCurrentUser() {
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.username) return null;
-    return {
-      username: normalizeUsername(parsed.username),
-      displayName: parsed.displayName || parsed.username,
-      lastLogin: parsed.lastLogin || Date.now(),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function getSavedUsers() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveUserProfile(user) {
-  const users = getSavedUsers().filter((item) => item.username !== user.username);
-  users.push(user);
-  users.sort((a, b) => (a.displayName || a.username).localeCompare(b.displayName || b.username));
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-function migrateLegacyProgress(user) {
-  const userKey = getUserStorageKey(user.username);
-  if (localStorage.getItem(userKey) || localStorage.getItem(LEGACY_MIGRATED_KEY)) return;
-  const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (legacy) {
-    localStorage.setItem(userKey, legacy);
-    localStorage.setItem(LEGACY_MIGRATED_KEY, user.username);
-  }
-}
 
 function coerceState(parsed) {
   const base = defaultState();
@@ -103,14 +44,8 @@ function defaultState() {
 let state;
 
 function loadState() {
-  if (!currentUser) {
-    state = defaultState();
-    return;
-  }
-
   try {
-    migrateLegacyProgress(currentUser);
-    const raw = localStorage.getItem(getUserStorageKey(currentUser.username));
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
     state = raw ? coerceState(JSON.parse(raw)) : defaultState();
   } catch {
     state = defaultState();
@@ -118,9 +53,8 @@ function loadState() {
 }
 
 function saveState() {
-  if (!currentUser) return;
   try {
-    localStorage.setItem(getUserStorageKey(currentUser.username), JSON.stringify(state));
+    localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(state));
   } catch { /* quota exceeded */ }
 }
 
@@ -862,13 +796,6 @@ const sidebar = document.querySelector(".sidebar");
 const menuToggle = document.querySelector("#menuToggle");
 const navButtons = document.querySelectorAll("[data-view]");
 const viewLinks = document.querySelectorAll("[data-view-link]");
-const loginView = document.querySelector("#loginView");
-const loginForm = document.querySelector("#loginForm");
-const loginNameInput = document.querySelector("#loginName");
-const loginError = document.querySelector("#loginError");
-const savedUsersList = document.querySelector("#savedUsersList");
-const currentUserName = document.querySelector("#currentUserName");
-const logoutButton = document.querySelector("#logoutButton");
 
 function setView(viewId) {
   document.querySelectorAll(".view").forEach((view) => {
@@ -895,56 +822,6 @@ function escapeHtml(value) {
     "'": "&#39;",
     '"': "&quot;",
   }[char]));
-}
-
-function renderSavedUsers() {
-  if (!savedUsersList) return;
-  const users = getSavedUsers();
-  savedUsersList.innerHTML = users.length
-    ? users.map((user) => `<button type="button" class="saved-user" data-login-user="${escapeHtml(user.username)}">${escapeHtml(user.displayName || user.username)}</button>`).join("")
-    : '<p class="login-hint">No local profiles yet. Enter a name to create one.</p>';
-  savedUsersList.querySelectorAll("[data-login-user]").forEach((button) => {
-    button.addEventListener("click", () => loginUser(button.dataset.loginUser));
-  });
-}
-
-function updateCurrentUserDisplay() {
-  document.querySelectorAll("[data-current-user-name]").forEach((el) => {
-    el.textContent = currentUser?.displayName || "Not signed in";
-  });
-  if (currentUserName) currentUserName.textContent = currentUser?.displayName || "Not signed in";
-}
-
-function requireLogin() {
-  document.body.classList.toggle("is-authenticated", Boolean(currentUser));
-  document.body.classList.toggle("is-locked", !currentUser);
-  updateCurrentUserDisplay();
-  if (!currentUser) renderSavedUsers();
-  return Boolean(currentUser);
-}
-
-function loginUser(username) {
-  const displayName = String(username || "").trim();
-  const normalized = normalizeUsername(displayName);
-  if (!normalized) {
-    if (loginError) loginError.textContent = "Enter a username to continue.";
-    return;
-  }
-
-  currentUser = { username: normalized, displayName, lastLogin: Date.now() };
-  localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
-  saveUserProfile(currentUser);
-  loadState();
-  requireLogin();
-  initializeStudyApp();
-}
-
-function logoutUser() {
-  saveState();
-  localStorage.removeItem(USER_KEY);
-  currentUser = null;
-  state = defaultState();
-  requireLogin();
 }
 
 function initializeStudyApp() {
@@ -1657,9 +1534,9 @@ function importProgress(file) {
 }
 
 function resetProgress() {
-  if (!confirm("This will permanently delete all progress for the signed-in user only. Are you sure?")) return;
-  if (!confirm("Really delete this user's progress? This cannot be undone.")) return;
-  if (currentUser) localStorage.removeItem(getUserStorageKey(currentUser.username));
+  if (!confirm("This will permanently delete all saved progress. Are you sure?")) return;
+  if (!confirm("Really delete all progress? This cannot be undone.")) return;
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
   state = defaultState();
   saveState();
   currentQuestion = 0;
@@ -1833,18 +1710,9 @@ document.querySelector("#importProgress").addEventListener("change", (e) => {
 });
 document.querySelector("#resetProgress").addEventListener("click", resetProgress);
 
-// Auth
-loginForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  loginUser(loginNameInput?.value);
-});
-logoutButton?.addEventListener("click", logoutUser);
-
 // ────────────────────────────────────────────────────────────────
 //  INIT
 // ────────────────────────────────────────────────────────────────
 
-if (requireLogin()) {
-  loadState();
-  initializeStudyApp();
-}
+loadState();
+initializeStudyApp();

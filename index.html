@@ -12,38 +12,7 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="is-locked">
-    <section class="login-view" id="loginView" aria-labelledby="login-title">
-      <article class="login-card">
-        <div class="brand login-brand">
-          <div class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="img">
-              <path d="M12 2 20 5.5V11c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5.5L12 2Z" />
-              <path d="M8.5 12.1 10.7 14.3 15.8 8.9" />
-            </svg>
-          </div>
-          <div>
-            <p>SY0-701</p>
-            <strong>Security+</strong>
-          </div>
-        </div>
-        <p class="eyebrow">Secure Study Profile</p>
-        <h1 id="login-title">Sign in to track your progress</h1>
-        <p class="login-copy">Create or reopen a local profile. Quizzes, labs, exams, flashcards, and study-plan progress are saved separately for each login on this browser.</p>
-        <form id="loginForm" class="login-form">
-          <label for="loginName">Username</label>
-          <input id="loginName" name="username" type="text" autocomplete="username" required placeholder="e.g. Alex" />
-          <button class="button primary" type="submit">Continue</button>
-          <p class="form-error" id="loginError" role="alert"></p>
-        </form>
-        <div class="saved-users">
-          <p class="eyebrow">Saved Profiles</p>
-          <div id="savedUsersList"></div>
-        </div>
-        <p class="login-hint">This is a local browser login for progress separation, not a server-backed account.</p>
-      </article>
-    </section>
-
+  <body>
     <div class="app-shell">
       <aside class="sidebar" aria-label="Primary">
         <div class="brand">
@@ -72,12 +41,6 @@
           <button class="nav-link" data-view="settings"><span class="nav-svg settings-svg" aria-hidden="true"></span>Settings</button>
         </nav>
 
-        <div class="sidebar-card">
-          <p class="eyebrow">Signed in as</p>
-          <strong data-current-user-name>Not signed in</strong>
-          <p>Progress is saved to this local profile.</p>
-          <button class="button secondary small-button" id="logoutButton" type="button">Log Out</button>
-        </div>
 
         <div class="sidebar-card streak-card">
           <p class="eyebrow">Flashcard Streak</p>
@@ -99,7 +62,6 @@
           </div>
           <strong>SY0-701</strong>
         </div>
-        <div class="mobile-user"><span data-current-user-name>Not signed in</span></div>
         <button class="icon-button" id="menuToggle" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
       </div>
 
@@ -461,11 +423,6 @@
           <header class="page-header compact-header"><div><p class="eyebrow">Settings</p><h1 id="settings-title">Preferences</h1><p class="header-copy">Tune the study environment for longer sessions.</p></div></header>
 
           <article class="panel settings-panel">
-            <div><p class="eyebrow">Account</p><h2>Signed in as <span id="currentUserName">Not signed in</span></h2><p style="font-size:0.9rem;color:var(--muted)">Progress is stored separately for this local profile.</p></div>
-            <button class="button secondary" type="button" onclick="document.getElementById('logoutButton').click()">Log Out</button>
-          </article>
-
-          <article class="panel settings-panel" style="margin-top:1rem">
             <div><p class="eyebrow">Your Stats</p><h2>Study Progress</h2></div>
             <div id="settingsStats" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;font-size:0.9rem"></div>
           </article>
