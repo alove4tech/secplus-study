@@ -4,6 +4,7 @@ node_modules
 *.md
 LICENSE
 docs/*.png
+tests/
 .dockerignore
 Dockerfile
 docker-compose.yml
