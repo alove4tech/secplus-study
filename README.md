@@ -1,46 +1,102 @@
 # Security+ Command Center
 
-A responsive static study application for CompTIA Security+ SY0-701 prep. No build step, no server required.
+A responsive, dark-mode-only static study application for CompTIA Security+ SY0-701 prep. It runs entirely in the browser: no build step, no app server, no accounts, and no database.
+
+Live test site: <https://alove4tech.github.io/secplus-study/>
 
 ## Features
 
-- **Dashboard** — readiness score computed from your actual quiz performance, daily plan, domain progress, and quick-access shortcuts
-- **Practice Quizzes** — 300-question SY0-701 bank with answer feedback, score tracking, random mode, and explanations
-- **PBQ Simulator** — performance-based question tasks for network zones, access controls, and incident response
-- **Flashcards** — spaced repetition with confidence tracking and daily streak counter
-- **Lab Simulator** — guided incident response scenario with evidence, checklists, hints, scoring, and debrief
-- **Study Plan** — 10-item checklist covering all exam objectives, persisted across sessions
-- **Mock Exams** — exam-format reference with question counts and time limits
-- **Notes** — editable study notes
-- **Progress Tracking** — all quiz results, lab scores, PBQ scores, and flashcard reviews are saved in localStorage
-- **Dark Mode** — toggle in Settings, persisted across sessions
-- **Responsive** — desktop sidebar and mobile hamburger menu
+- **Command Center dashboard** — readiness score, daily study plan, domain progress, review queue count, streak tracking, and quick-access cards.
+- **Adaptive practice quizzes** — a generated SY0-701 question bank currently containing **536 questions** derived from exam-objective templates, with answer feedback, explanations, confidence selection, random question mode, weak-area review, and selectable 5/10/15/20-question sessions.
+- **PBQ simulator** — **8 performance-based scenarios** for network zones, firewall rules, incident-response phases, certificate types, wireless authentication, risk treatment, SOC log triage, and cloud shared responsibility.
+- **Flashcards** — 6 quick recall cards with flip interaction, confidence tracking, and daily streak updates.
+- **Lab simulator** — **8 guided labs** with evidence, action checklists, hints, scoring, and debrief feedback: suspicious sign-in, malware containment, access-control audit, network segmentation, phishing triage, cloud storage exposure, rogue wireless AP, and vulnerability prioritization.
+- **Study plan** — 10 persisted checklist items covering all five SY0-701 domains.
+- **Mock exams** — timed 90-question full exam and 25-question weak-area drill with CompTIA-style 100–900 scaled scoring, pass/fail result, domain breakdown, and exam history.
+- **Notes** — built-in high-yield study reminders stored with progress and displayed in the Notes and Progress views.
+- **Progress analytics** — objective heat map, domain progress, next-review prompts, quiz/lab/PBQ/exam history, and settings stats.
+- **Export/import/reset** — back up progress as JSON, restore a JSON backup, or reset all browser-local progress from Settings.
+- **Responsive UI** — desktop sidebar plus mobile hamburger navigation.
+
+## What It Does Not Include
+
+- No login or user profiles.
+- No password protection.
+- No server-side sync.
+- No telemetry or tracking.
+- No light theme; the interface is intentionally dark-mode only.
 
 ## Run Locally
 
-Open `index.html` in a browser. That's it.
+Because the app is static, you can open `index.html` directly in a browser.
+
+For a local HTTP server, run one of these from the repository root:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open <http://localhost:8000>.
 
 ## Run with Docker
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-Serves the app on [http://localhost:8080](http://localhost:8080) via nginx.
+The Docker setup serves the static app with nginx on <http://localhost:8080>. The nginx config also provides SPA fallback routing and basic security headers.
+
+Stop it with:
+
+```bash
+docker compose down
+```
 
 ## Deploy
 
-Static files only — works on GitHub Pages, Netlify, Vercel, Cloudflare Pages, or any web host. A GitHub Actions workflow is included for automatic deployment to GitHub Pages on push to `main`.
+Static files only — works on GitHub Pages, Netlify, Vercel, Cloudflare Pages, nginx, or any web host that can serve HTML/CSS/JS.
+
+This repo includes a GitHub Actions workflow that deploys the repository contents to GitHub Pages when `main` is pushed. The current test deployment is:
+
+<https://alove4tech.github.io/secplus-study/>
 
 ## Data Storage
 
-All progress is stored in the browser's localStorage. No accounts, no server, no tracking. Your data stays in your browser. Use the Settings page to export/import your progress as JSON.
+All study data is stored in the current browser's `localStorage` under:
+
+```text
+secplus-study-progress-v4
+```
+
+Stored data includes quiz results, quiz sessions, flashcard confidence, lab scores, PBQ scores, study-plan checklist state, streak days, review queue, exam results, and notes.
+
+Because storage is browser-local:
+
+- progress is not shared between different devices, browsers, or users;
+- clearing site data/browser storage will remove progress;
+- GitHub Pages visitors do not see each other's progress;
+- export progress from Settings if you want a backup or want to move progress to another browser.
+
+## Tests and Checks
+
+The app does not use npm or a bundler. Source-level regression checks live in `tests/securityplus_source_checks.py`.
+
+Run:
+
+```bash
+python3 tests/securityplus_source_checks.py
+node --check app.js
+```
 
 ## Screenshots
 
-| Desktop (Light) | Desktop (Dark) | Mobile |
-|---|---|---|
-| ![Desktop Light](docs/desktop-light.png) | ![Desktop Dark](docs/desktop-dark.png) | ![Mobile](docs/mobile.png) |
+Screenshots are stored in `docs/`.
+
+| Overview | PBQs | Labs | Progress | Mobile |
+|---|---|---|---|---|
+| ![Desktop Overview](docs/desktop-overview.png) | ![PBQs](docs/pbqs.png) | ![Labs](docs/labs.png) | ![Progress](docs/progress.png) | ![Mobile](docs/mobile.png) |
+
+> Note: older screenshot assets may still exist in `docs/`, including historical light-theme captures, but the current app is dark-mode only.
 
 ## License
 
