@@ -109,12 +109,15 @@
                   <p class="eyebrow">Daily Plan</p>
                   <h2>Today</h2>
                 </div>
-                <button class="text-button" data-view-link="study-plan">Edit Plan</button>
+                <button class="text-button" data-view-link="study-plan">Open Plan</button>
               </div>
-              <p class="focus-line">Today's focus: <strong>Domain 2: Architecture and Design</strong><span>Est. 90 min</span></p>
-              <p class="plan-help">Mark done after you complete that activity. The boxes are your manual checklist for today's study session.</p>
+              <p class="focus-line">Today's focus: <strong>Pass one short quiz per objective section.</strong></p>
+              <div class="plan-progress" aria-label="Daily Plan completion">
+                <div class="plan-progress-track"><div class="plan-progress-fill" id="dailyPlanProgressBar"></div></div>
+                <span id="dailyPlanProgressText">0 / 10 sections passed today</span>
+              </div>
+              <p class="plan-help">Use each section button to take a 10-question quiz. Passing the quiz checks that section off for today.</p>
               <ul class="task-list" id="dashboardStudyPlan"></ul>
-              <button class="button primary plan-start" data-view-link="practice">Start Study Session</button>
             </article>
 
             <article class="panel domains-panel">
@@ -175,9 +178,8 @@
             <div>
               <p class="eyebrow">Study Plan</p>
               <h1 id="study-plan-title">Today's Session</h1>
-              <p class="header-copy">A checklist, not an auto-generated lesson: use these tasks as a focused 90-minute study routine. Check items off manually as you finish them.</p>
+              <p class="header-copy">Pass a 10-question quiz for each objective section to check it off for today. The progress bar tracks how many sections you have passed today.</p>
             </div>
-            <button class="button primary" data-view-link="practice">Start Study Session</button>
           </header>
           <div class="progress-grid">
             <article class="panel">
@@ -191,7 +193,7 @@
               <p class="eyebrow">Quick Tips</p>
               <h2>Session Strategy</h2>
               <ul class="notes-list">
-                <li>Pick the matching Daily Plan section in Scenario Practice before starting a quiz.</li>
+                <li>Use each Daily Plan section button to launch its matching Practice quiz.</li>
                 <li>Answer first, then read the explanation.</li>
                 <li>Mark low-confidence questions for review.</li>
                 <li>Finish with the lab if incident response feels weak.</li>
@@ -205,7 +207,7 @@
           <header class="page-header compact-header">
             <div>
               <p class="eyebrow">Adaptive Practice</p>
-              <h1 id="practice-title">Scenario Practice</h1>
+              <h1 id="practice-title">Practice</h1>
               <p class="header-copy">Answer realistic prompts from a <strong id="practiceBankSize">300</strong>-question SY0-701 bank, tag confidence, and review why each option works or fails.</p>
             </div>
             <div class="header-actions">
@@ -218,18 +220,33 @@
           <!-- Quiz length picker -->
           <div class="quiz-length-picker" id="quizLengthPicker">
             <p class="eyebrow">Choose Quiz Length</p>
-            <div class="practice-domain-filter" data-practice-domain-filter>
-              <label for="practiceDomainSelect">Practice one Daily Plan section at a time</label>
-              <select id="practiceDomainSelect" aria-label="Choose Security+ objective range for Scenario Practice">
-                <option value="all">All Daily Plan sections</option>
-              </select>
-              <p class="field-help" id="practiceDomainHelp">Pick a Daily Plan objective range, answer scenarios from that range, then check that plan item off manually when you are done.</p>
-            </div>
-            <div class="quiz-length-options">
-              <button class="button secondary" data-quiz-length="5">5 Questions</button>
-              <button class="button secondary" data-quiz-length="10">10 Questions</button>
-              <button class="button secondary" data-quiz-length="15">15 Questions</button>
-              <button class="button secondary" data-quiz-length="20">20 Questions</button>
+            <div class="practice-choice-grid">
+              <article class="practice-choice-card random-quiz-filter" id="randomQuizLengthPicker" data-random-quiz-filter>
+                <p class="choice-kicker">Mixed Mode</p>
+                <h2>Random quiz from all objectives</h2>
+                <p class="field-help">Use these for mixed practice across the full question bank. They ignore the Daily Plan section selector.</p>
+                <div class="quiz-length-options stacked">
+                  <button class="button secondary" data-random-quiz-length="5">5 Random</button>
+                  <button class="button secondary" data-random-quiz-length="10">10 Random</button>
+                  <button class="button secondary" data-random-quiz-length="15">15 Random</button>
+                  <button class="button secondary" data-random-quiz-length="20">20 Random</button>
+                </div>
+              </article>
+
+              <article class="practice-choice-card practice-domain-filter" data-practice-domain-filter>
+                <p class="choice-kicker">Focused Mode</p>
+                <label for="practiceDomainSelect">Practice one Daily Plan section at a time</label>
+                <select id="practiceDomainSelect" aria-label="Choose Security+ objective range for Practice">
+                  <option value="all">All Daily Plan sections</option>
+                </select>
+                <p class="field-help" id="practiceDomainHelp">Pick a Daily Plan objective range, or use a section button from the Study Plan to launch a 10-question quiz that checks off the section when passed.</p>
+                <div class="quiz-length-options stacked">
+                  <button class="button secondary" data-quiz-length="5">5 Questions</button>
+                  <button class="button secondary" data-quiz-length="10">10 Questions</button>
+                  <button class="button secondary" data-quiz-length="15">15 Questions</button>
+                  <button class="button secondary" data-quiz-length="20">20 Questions</button>
+                </div>
+              </article>
             </div>
           </div>
 
@@ -426,7 +443,24 @@
         <!-- NOTES -->
         <section class="view" id="notes" aria-labelledby="notes-title">
           <header class="page-header compact-header"><div><p class="eyebrow">Notes</p><h1 id="notes-title">Study Notes</h1><p class="header-copy">High-yield reminders pulled from weak areas and lab debriefs.</p></div></header>
-          <article class="panel notes-panel"><ul class="notes-list large" id="notesList"></ul></article>
+          <div class="notes-layout">
+            <article class="panel notes-panel">
+              <p class="eyebrow">Built-in Reminders</p>
+              <h2>Study Notes</h2>
+              <ul class="notes-list large" id="notesList"></ul>
+            </article>
+            <article class="panel notes-panel user-note-editor">
+              <p class="eyebrow">My Notes</p>
+              <h2>Add your own notes</h2>
+              <p class="field-help">Save quick reminders, acronyms, or questions you want to revisit. These stay in your browser with the rest of your progress.</p>
+              <textarea id="userNotesText" rows="6" placeholder="Example: Review port numbers for Kerberos, RADIUS, TACACS+, and LDAP before the next quiz."></textarea>
+              <div class="split-actions">
+                <button class="button primary" id="saveUserNote">Save Note</button>
+                <button class="button secondary" id="clearUserNoteDraft">Clear Draft</button>
+              </div>
+              <ul class="notes-list user-notes-list" id="userNotesList"></ul>
+            </article>
+          </div>
         </section>
 
         <!-- PROGRESS -->

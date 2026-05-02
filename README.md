@@ -7,13 +7,13 @@ Live test site: <https://alove4tech.github.io/secplus-study/>
 ## Features
 
 - **Command Center dashboard** — readiness score, daily study plan, domain progress, review queue count, streak tracking, and quick-access cards.
-- **Adaptive practice quizzes** — a generated SY0-701 question bank currently containing **536 questions** derived from exam-objective templates, with answer feedback, explanations, confidence selection, Daily Plan section/objective filtering, random question mode, weak-area review, and selectable 5/10/15/20-question sessions.
+- **Adaptive Practice** — a generated SY0-701 question bank currently containing **536 questions** derived from exam-objective templates, with answer feedback, explanations, confidence selection, Daily Plan section/objective filtering, all-objective random 5/10/15/20-question quizzes, random question mode, and weak-area review.
 - **PBQ simulator** — **8 performance-based scenarios** for network zones, firewall rules, incident-response phases, certificate types, wireless authentication, risk treatment, SOC log triage, and cloud shared responsibility.
 - **Flashcards** — 100-card recall pool with a different 20-card daily set, flip interaction, Known/Unknown marking, unknown-card repeats, occasional known-card rechecks, and daily streak updates.
 - **Lab simulator** — **8 guided labs** with evidence, action checklists, hints, scoring, and debrief feedback: suspicious sign-in, malware containment, access-control audit, network segmentation, phishing triage, cloud storage exposure, rogue wireless AP, and vulnerability prioritization.
-- **Study plan** — 10 persisted manual checklist items covering all five SY0-701 domains. It is a suggested study-session checklist; complete the linked activity yourself, then check the item off.
+- **Study plan** — 10 daily objective sections covering all five SY0-701 domains. Each section has a 10-question quiz button; passing that quiz checks the section off for the day and advances the Daily Plan progress bar.
 - **Mock exams** — timed 90-question full exam and 25-question weak-area drill with CompTIA-style 100–900 scaled scoring, pass/fail result, domain breakdown, and exam history.
-- **Notes** — built-in high-yield study reminders stored with progress and displayed in the Notes and Progress views.
+- **Notes** — built-in high-yield study reminders plus your own browser-local personal notes, displayed in the Notes and Progress views.
 - **Progress analytics** — objective heat map, domain progress, next-review prompts, quiz/lab/PBQ/exam history, and settings stats.
 - **Export/import/reset** — back up progress as JSON, restore a JSON backup, or reset all browser-local progress from Settings.
 - **Responsive UI** — desktop sidebar plus mobile hamburger navigation.
@@ -68,7 +68,7 @@ All study data is stored in the current browser's `localStorage` under:
 secplus-study-progress-v4
 ```
 
-Stored data includes quiz results, quiz sessions, flashcard confidence, lab scores, PBQ scores, study-plan checklist state, streak days, review queue, exam results, and notes.
+Stored data includes quiz results, quiz sessions, flashcard confidence, lab scores, PBQ scores, daily study-plan quiz completion state, streak days, review queue, exam results, and notes.
 
 Because storage is browser-local:
 

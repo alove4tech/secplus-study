@@ -20,6 +20,7 @@ function coerceState(parsed) {
   });
   next.studyPlanDone = next.studyPlanDone && typeof next.studyPlanDone === "object" ? next.studyPlanDone : {};
   next.notes = Array.isArray(next.notes) ? next.notes : base.notes;
+  next.userNotes = Array.isArray(next.userNotes) ? next.userNotes : [];
   return next;
 }
 
@@ -41,6 +42,7 @@ function defaultState() {
       "Tokenization replaces sensitive data with lookup tokens. Masking hides part of the value for display.",
       "ALE = SLE x ARO. SLE includes asset value and exposure factor.",
     ],
+    userNotes: [],
   };
 }
 
@@ -869,6 +871,7 @@ let dailyFlashcardKey = "";
 let reviewingWeakAreas = false;
 let currentPbqScenario = 0;
 let currentLabScenario = 0;
+let activePlanQuizIndex = null;
 
 // Quiz session (bounded length)
 let quizSession = {
@@ -876,6 +879,7 @@ let quizSession = {
   pool: [],       // shuffled question indices for this session
   index: 0,       // current position in pool
   length: 0,      // total questions in this session
+  planIndex: null,
 };
 
 // Exam state
@@ -1042,13 +1046,14 @@ function renderDashboard() {
 // ────────────────────────────────────────────────────────────────
 
 function renderStudyPlan() {
+  const today = getTodayKey();
   const markup = studyPlanItems.map((item, index) => `
-    <li>
+    <li class="${isStudyPlanComplete(index, today) ? "complete" : ""}">
       <label>
-        <input type="checkbox" ${state.studyPlanDone[index] ? "checked" : ""} data-plan-index="${index}" />
+        <input type="checkbox" ${isStudyPlanComplete(index, today) ? "checked" : ""} data-plan-index="${index}" disabled />
         <span>${index + 1}. ${item.title}</span>
       </label>
-      <span>${item.time}</span>
+      <button class="button secondary plan-quiz-button" type="button" data-plan-quiz-index="${index}">Take 10-question quiz</button>
     </li>
   `).join("");
 
@@ -1057,17 +1062,49 @@ function renderStudyPlan() {
   if (dash) dash.innerHTML = markup;
   if (plan) plan.innerHTML = markup;
 
-  document.querySelectorAll("[data-plan-index]").forEach(cb => {
-    cb.addEventListener("change", (e) => {
-      const idx = Number(e.target.dataset.planIndex);
-      state.studyPlanDone[idx] = e.target.checked;
-      saveState();
+  document.querySelectorAll("[data-plan-quiz-index]").forEach(button => {
+    button.addEventListener("click", (e) => {
+      const idx = Number(e.currentTarget.dataset.planQuizIndex);
+      startDailyPlanQuiz(idx);
     });
   });
 
-  const doneCount = Object.values(state.studyPlanDone).filter(Boolean).length;
+  const doneCount = getStudyPlanDoneCount(today);
+  const pct = Math.round((doneCount / studyPlanItems.length) * 100);
   const pill = document.querySelector(".status-pill");
   if (pill) pill.textContent = `${doneCount} / ${studyPlanItems.length} completed`;
+  const dailyPlanProgressBar = document.querySelector("#dailyPlanProgressBar");
+  if (dailyPlanProgressBar) dailyPlanProgressBar.style.width = `${pct}%`;
+  const progressText = document.querySelector("#dailyPlanProgressText");
+  if (progressText) progressText.textContent = `${doneCount} / ${studyPlanItems.length} sections passed today`;
+}
+
+function getStudyPlanCompletionKey(index, today = getTodayKey()) {
+  return `${today}:${index}`;
+}
+
+function isStudyPlanComplete(index, today = getTodayKey()) {
+  return Boolean(state.studyPlanDone[getStudyPlanCompletionKey(index, today)]);
+}
+
+function getStudyPlanDoneCount(today = getTodayKey()) {
+  return studyPlanItems.filter((_, index) => isStudyPlanComplete(index, today)).length;
+}
+
+function markStudyPlanCompleteFromQuiz(index) {
+  if (!Number.isInteger(index) || !studyPlanItems[index]) return;
+  state.studyPlanDone[getStudyPlanCompletionKey(index)] = true;
+  saveState();
+  renderStudyPlan();
+  renderDashboard();
+}
+
+function startDailyPlanQuiz(index) {
+  if (!Number.isInteger(index) || !studyPlanItems[index]) return;
+  const select = getPracticeDomainSelect();
+  if (select) select.value = String(index);
+  setView("practice");
+  startQuiz(10, { planIndex: index });
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -1092,13 +1129,17 @@ function getSelectedPracticeObjectives() {
 
 function getSelectedPracticeTemplateIds() {
   const selectedPracticeObjectives = getSelectedPracticeObjectives();
-  const totalTemplates = Math.floor(questionBank.length / 4);
-  return Array.from({ length: totalTemplates }, (_, i) => i)
+  return getAllPracticeTemplateIds()
     .filter((templateId) => {
       if (selectedPracticeObjectives.length === 0) return true;
       const question = questionBank[templateId * 4];
       return selectedPracticeObjectives.includes(question?.objective);
     });
+}
+
+function getAllPracticeTemplateIds() {
+  const totalTemplates = Math.floor(questionBank.length / 4);
+  return Array.from({ length: totalTemplates }, (_, i) => i);
 }
 
 function getSelectedPracticeQuestionIds(includeAllVariants = true) {
@@ -1221,8 +1262,7 @@ function shuffle(arr) {
   return a;
 }
 
-function startQuiz(length) {
-  const templateIds = getSelectedPracticeTemplateIds();
+function startQuizFromTemplateIds(length, templateIds, options = {}) {
   const count = Math.min(length, templateIds.length);
   const sessionTemplateIds = shuffle(templateIds).slice(0, count);
   const pool = sessionTemplateIds.map(tid => tid * 4 + Math.floor(Math.random() * 4));
@@ -1232,7 +1272,8 @@ function startQuiz(length) {
     return;
   }
 
-  quizSession = { active: true, pool, index: 0, length: pool.length };
+  activePlanQuizIndex = Number.isInteger(options.planIndex) ? options.planIndex : null;
+  quizSession = { active: true, pool, index: 0, length: pool.length, planIndex: activePlanQuizIndex };
   reviewingWeakAreas = false;
   sessionCorrect = 0;
   sessionAnswered = 0;
@@ -1244,13 +1285,22 @@ function startQuiz(length) {
   renderQuestion();
 }
 
+function startQuiz(length, options = {}) {
+  startQuizFromTemplateIds(length, getSelectedPracticeTemplateIds(), options);
+}
+
+function startRandomQuiz(length) {
+  startQuizFromTemplateIds(length, getAllPracticeTemplateIds(), { planIndex: null });
+}
+
 function startReviewQuiz(length) {
   const allIds = getWeakAreaQuestionIds();
   if (!allIds || allIds.length === 0) return;
   const shuffled = shuffle(allIds);
   const pool = shuffled.slice(0, Math.min(length, shuffled.length));
 
-  quizSession = { active: true, pool, index: 0, length: pool.length };
+  activePlanQuizIndex = null;
+  quizSession = { active: true, pool, index: 0, length: pool.length, planIndex: null };
   reviewingWeakAreas = true;
   sessionCorrect = 0;
   sessionAnswered = 0;
@@ -1272,7 +1322,8 @@ function endQuizSession() {
     });
     saveState();
   }
-  quizSession = { active: false, pool: [], index: 0, length: 0 };
+  quizSession = { active: false, pool: [], index: 0, length: 0, planIndex: null };
+  activePlanQuizIndex = null;
   reviewingWeakAreas = false;
   sessionCorrect = 0;
   sessionAnswered = 0;
@@ -1758,8 +1809,36 @@ function renderNotes() {
   const markup = state.notes.map((note) => `<li>${note}</li>`).join("");
   const dashNotes = document.querySelector("#dashboardNotes");
   const notesList = document.querySelector("#notesList");
+  const userNotesList = document.querySelector("#userNotesList");
   if (dashNotes) dashNotes.innerHTML = markup;
   if (notesList) notesList.innerHTML = markup;
+  if (userNotesList) {
+    userNotesList.innerHTML = state.userNotes.length
+      ? state.userNotes.map((note, index) => `
+        <li>
+          <span class="user-note-text">${escapeHtml(note)}</span>
+          <button class="button secondary" data-remove-user-note="${index}">Delete</button>
+        </li>
+      `).join("")
+      : '<li class="empty-notes">No personal notes yet. Add one above when something clicks or needs review.</li>';
+  }
+}
+
+function addUserNote() {
+  const noteInput = document.querySelector("#userNotesText");
+  const note = noteInput?.value.trim();
+  if (!note) return;
+  state.userNotes.unshift(note);
+  saveState();
+  if (noteInput) noteInput.value = "";
+  renderNotes();
+}
+
+function removeUserNote(index) {
+  if (!Number.isInteger(index) || index < 0 || index >= state.userNotes.length) return;
+  state.userNotes.splice(index, 1);
+  saveState();
+  renderNotes();
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -1799,11 +1878,12 @@ function importProgress(file) {
       const base = defaultState();
       state = { ...base, ...imported };
       // Ensure arrays
-      for (const key of ["quizResults", "quizSessions", "labScores", "pbqScores", "streakDays", "reviewQueue", "examResults"]) {
+      for (const key of ["quizResults", "quizSessions", "labScores", "pbqScores", "streakDays", "reviewQueue", "examResults", "userNotes"]) {
         if (!Array.isArray(state[key])) state[key] = [];
       }
       saveState();
       renderDashboard();
+      renderNotes();
       renderSettings();
       alert("Progress imported successfully.");
     } catch {
@@ -1824,6 +1904,7 @@ function resetProgress() {
   sessionAnswered = 0;
   renderDashboard();
   renderQuestion();
+  renderNotes();
   renderSettings();
   renderProgress();
 }
@@ -1838,6 +1919,23 @@ navButtons.forEach((button) => {
 
 viewLinks.forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.viewLink));
+});
+
+document.querySelector("#saveUserNote")?.addEventListener("click", addUserNote);
+document.querySelector("#clearUserNoteDraft")?.addEventListener("click", () => {
+  const noteInput = document.querySelector("#userNotesText");
+  if (noteInput) noteInput.value = "";
+});
+document.querySelector("#userNotesText")?.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    event.preventDefault();
+    addUserNote();
+  }
+});
+document.querySelector("#userNotesList")?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-remove-user-note]");
+  if (!removeButton) return;
+  removeUserNote(Number(removeButton.dataset.removeUserNote));
 });
 
 menuToggle?.addEventListener("click", () => {
@@ -1855,11 +1953,14 @@ document.querySelector("#nextQuestion").addEventListener("click", () => {
       const correct = sessionCorrect;
       const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
       const pass = pct >= 83;
+      const completedPlanIndex = quizSession.planIndex;
       const duration = Math.round((Date.now() - sessionStartTs) / 1000);
       const mins = Math.floor(duration / 60);
       const secs = duration % 60;
       endQuizSession();
-      alert(`Quiz Complete!\n\nScore: ${correct}/${total} (${pct}%)\nTime: ${mins}m ${secs}s\n${pass ? '✓ PASSED' : '✗ Keep practicing'}`);
+      if (pass && Number.isInteger(completedPlanIndex)) markStudyPlanCompleteFromQuiz(completedPlanIndex);
+      const planMessage = pass && Number.isInteger(completedPlanIndex) ? "\nDaily Plan section checked off for today." : "";
+      alert(`Quiz Complete!\n\nScore: ${correct}/${total} (${pct}%)\nTime: ${mins}m ${secs}s\n${pass ? '✓ PASSED' : '✗ Keep practicing'}${planMessage}`);
       return;
     }
     currentQuestion = quizSession.pool[quizSession.index];
@@ -1916,6 +2017,13 @@ document.querySelectorAll("[data-quiz-length]").forEach(btn => {
   btn.addEventListener("click", () => {
     const length = parseInt(btn.dataset.quizLength, 10);
     startQuiz(length);
+  });
+});
+
+document.querySelectorAll("[data-random-quiz-length]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const length = parseInt(btn.dataset.randomQuizLength, 10);
+    startRandomQuiz(length);
   });
 });
 
