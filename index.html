@@ -112,6 +112,7 @@
                 <button class="text-button" data-view-link="study-plan">Edit Plan</button>
               </div>
               <p class="focus-line">Today's focus: <strong>Domain 2: Architecture and Design</strong><span>Est. 90 min</span></p>
+              <p class="plan-help">Mark done after you complete that activity. The boxes are your manual checklist for today's study session.</p>
               <ul class="task-list" id="dashboardStudyPlan"></ul>
               <button class="button primary plan-start" data-view-link="practice">Start Study Session</button>
             </article>
@@ -137,8 +138,8 @@
 
             <article class="panel flash-card">
               <p class="eyebrow">Flashcards</p>
-              <h2>0 / 6</h2>
-              <p>Review flashcards daily to build your streak.</p>
+              <h2>0 / 100</h2>
+              <p>Study a rotating 20-card daily set with Known/Unknown tracking.</p>
               <button class="button secondary" data-view-link="flashcards">Study Flashcards</button>
             </article>
 
@@ -174,7 +175,7 @@
             <div>
               <p class="eyebrow">Study Plan</p>
               <h1 id="study-plan-title">Today's Session</h1>
-              <p class="header-copy">A focused 90-minute path modeled after the dashboard plan.</p>
+              <p class="header-copy">A checklist, not an auto-generated lesson: use these tasks as a focused 90-minute study routine. Check items off manually as you finish them.</p>
             </div>
             <button class="button primary" data-view-link="practice">Start Study Session</button>
           </header>
@@ -190,6 +191,7 @@
               <p class="eyebrow">Quick Tips</p>
               <h2>Session Strategy</h2>
               <ul class="notes-list">
+                <li>Pick the matching Daily Plan section in Scenario Practice before starting a quiz.</li>
                 <li>Answer first, then read the explanation.</li>
                 <li>Mark low-confidence questions for review.</li>
                 <li>Finish with the lab if incident response feels weak.</li>
@@ -216,6 +218,13 @@
           <!-- Quiz length picker -->
           <div class="quiz-length-picker" id="quizLengthPicker">
             <p class="eyebrow">Choose Quiz Length</p>
+            <div class="practice-domain-filter" data-practice-domain-filter>
+              <label for="practiceDomainSelect">Practice one Daily Plan section at a time</label>
+              <select id="practiceDomainSelect" aria-label="Choose Security+ objective range for Scenario Practice">
+                <option value="all">All Daily Plan sections</option>
+              </select>
+              <p class="field-help" id="practiceDomainHelp">Pick a Daily Plan objective range, answer scenarios from that range, then check that plan item off manually when you are done.</p>
+            </div>
             <div class="quiz-length-options">
               <button class="button secondary" data-quiz-length="5">5 Questions</button>
               <button class="button secondary" data-quiz-length="10">10 Questions</button>
@@ -296,16 +305,22 @@
         <!-- FLASHCARDS -->
         <section class="view" id="flashcards" aria-labelledby="flashcards-title">
           <header class="page-header compact-header">
-            <div><p class="eyebrow">Spaced Repetition</p><h1 id="flashcards-title">Flashcards</h1><p class="header-copy">Short recall reps for ports, policies, attacks, and controls.</p></div>
+            <div><p class="eyebrow">Spaced Repetition</p><h1 id="flashcards-title">Flashcards</h1><p class="header-copy">Short recall reps for ports, policies, attacks, and controls. A different 20-card daily set is built from a large pool, prioritizing cards you mark as Unknown and occasionally rechecking Known cards.</p></div>
           </header>
           <div class="flashcard-stage">
+            <p class="flashcard-summary" id="flashcardDeckSummary">Daily set: 20 cards · Known: 0 · Unknown: 0</p>
             <article class="flashcard" id="flashcard" tabindex="0" role="button" aria-label="Flip flashcard">
               <p class="eyebrow" id="flashcardType">Term</p>
               <h2 id="flashcardFront"></h2>
               <p id="flashcardBack"></p>
-              <span class="flip-note">Tap to flip · <span id="flashcardProgress">1/6</span></span>
+              <span class="flip-note">Tap to flip · <span id="flashcardProgress">1/20</span></span>
             </article>
-            <div class="flashcard-controls"><button class="button secondary" id="prevCard">Previous</button><button class="button primary" id="nextCard">Got It</button></div>
+            <div class="flashcard-controls">
+              <button class="button secondary" id="prevCard">Previous</button>
+              <button class="button secondary" id="nextCard">Skip</button>
+              <button class="button primary" id="markCardKnown">Known</button>
+              <button class="button secondary trouble" id="markCardTrouble">Unknown</button>
+            </div>
           </div>
         </section>
 

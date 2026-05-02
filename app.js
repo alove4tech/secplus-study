@@ -15,6 +15,9 @@ function coerceState(parsed) {
   next.reviewQueue = Array.isArray(next.reviewQueue) ? next.reviewQueue : [];
   next.examResults = Array.isArray(next.examResults) ? next.examResults : [];
   next.flashcardConfidence = next.flashcardConfidence && typeof next.flashcardConfidence === "object" ? next.flashcardConfidence : {};
+  Object.entries(next.flashcardConfidence).forEach(([key, record]) => {
+    if (!record || typeof record !== "object") delete next.flashcardConfidence[key];
+  });
   next.studyPlanDone = next.studyPlanDone && typeof next.studyPlanDone === "object" ? next.studyPlanDone : {};
   next.notes = Array.isArray(next.notes) ? next.notes : base.notes;
   return next;
@@ -71,16 +74,16 @@ const domainMap = [
 ];
 
 const studyPlanItems = [
-  { title: "1.1 – 1.2 Security Concepts & Controls", time: "25 min" },
-  { title: "1.3 – 1.4 Change Management & Cryptography", time: "25 min" },
-  { title: "2.1 – 2.2 Threat Actors & Vectors", time: "30 min" },
-  { title: "2.3 – 2.5 Vulnerabilities & Mitigations", time: "30 min" },
-  { title: "3.1 – 3.3 Architecture & Resilience", time: "25 min" },
-  { title: "3.4 – 3.8 Identity, Endpoints, Network, App, Data", time: "35 min" },
-  { title: "4.1 – 4.3 Operations & Vulnerability Management", time: "30 min" },
-  { title: "4.4 – 4.6 Incident Response, Forensics & Automation", time: "30 min" },
-  { title: "5.1 – 5.2 Governance & Risk", time: "25 min" },
-  { title: "5.3 – 5.4 Third-Party & Compliance", time: "25 min" },
+  { title: "1.1 – 1.2 Security Concepts & Controls", time: "25 min", objectives: ["1.1", "1.2"] },
+  { title: "1.3 – 1.4 Change Management & Cryptography", time: "25 min", objectives: ["1.3", "1.4"] },
+  { title: "2.1 – 2.2 Threat Actors & Vectors", time: "30 min", objectives: ["2.1", "2.2"] },
+  { title: "2.3 – 2.5 Vulnerabilities & Mitigations", time: "30 min", objectives: ["2.3", "2.4", "2.5"] },
+  { title: "3.1 – 3.3 Architecture & Resilience", time: "25 min", objectives: ["3.1", "3.2", "3.3"] },
+  { title: "3.4 – 3.8 Identity, Endpoints, Network, App, Data", time: "35 min", objectives: ["3.4", "3.5", "3.6", "3.7", "3.8"] },
+  { title: "4.1 – 4.3 Operations & Vulnerability Management", time: "30 min", objectives: ["4.1", "4.2", "4.3"] },
+  { title: "4.4 – 4.6 Incident Response, Forensics & Automation", time: "30 min", objectives: ["4.4", "4.5", "4.6"] },
+  { title: "5.1 – 5.2 Governance & Risk", time: "25 min", objectives: ["5.1", "5.2"] },
+  { title: "5.3 – 5.4 Third-Party & Compliance", time: "25 min", objectives: ["5.3", "5.4"] },
 ];
 
 const questionTemplates = [
@@ -263,13 +266,110 @@ const questionBank = questionTemplates.flatMap((template, templateIndex) => {
 });
 
 const flashcards = [
-  { type: "Term", front: "Zero Trust", back: "Continuously verifies identity, device, context, and authorization rather than trusting a network location by default." },
-  { type: "Port", front: "TCP 443", back: "HTTPS. Expect encrypted web traffic protected by TLS certificates." },
-  { type: "Control Type", front: "Detective Control", back: "Identifies or records an event after it occurs, such as logging, monitoring, or IDS alerts." },
-  { type: "Protocol", front: "SAML", back: "XML-based federation protocol commonly used for enterprise single sign-on." },
-  { type: "Risk Formula", front: "ALE", back: "Annualized loss expectancy equals SLE multiplied by ARO." },
-  { type: "IR Phase", front: "Eradication", back: "Remove malware, close exploited vulnerabilities, and eliminate attacker persistence after containment." },
+  { id: "fc-001", type: "Term", front: "Zero Trust", back: "Continuously verifies identity, device health, context, and authorization instead of trusting network location." },
+  { id: "fc-002", type: "Port", front: "TCP 443", back: "HTTPS over TLS for encrypted web traffic." },
+  { id: "fc-003", type: "Control", front: "Detective Control", back: "Identifies or records events after they occur, such as IDS alerts, logs, and SIEM correlation." },
+  { id: "fc-004", type: "Protocol", front: "SAML", back: "XML-based federation protocol commonly used for enterprise single sign-on." },
+  { id: "fc-005", type: "Formula", front: "ALE", back: "Annualized loss expectancy equals single loss expectancy multiplied by annualized rate of occurrence." },
+  { id: "fc-006", type: "Phase", front: "Eradication", back: "Remove malware, close exploited vulnerabilities, and eliminate attacker persistence after containment." },
+  { id: "fc-007", type: "Term", front: "Least Privilege", back: "Users and services receive only the minimum permissions needed to perform their tasks." },
+  { id: "fc-008", type: "Term", front: "Implicit Deny", back: "Traffic or access not explicitly allowed is denied by default." },
+  { id: "fc-009", type: "Port", front: "TCP 22", back: "SSH for encrypted remote administration." },
+  { id: "fc-010", type: "Port", front: "TCP 3389", back: "RDP for Windows remote desktop access." },
+  { id: "fc-011", type: "Port", front: "UDP 53", back: "DNS queries commonly use UDP 53; zone transfers use TCP 53." },
+  { id: "fc-012", type: "Port", front: "TCP 25", back: "SMTP mail transfer between mail servers." },
+  { id: "fc-013", type: "Port", front: "TCP 110", back: "POP3 mail retrieval without encryption unless wrapped in TLS." },
+  { id: "fc-014", type: "Port", front: "TCP 143", back: "IMAP mail retrieval without encryption unless STARTTLS is used." },
+  { id: "fc-015", type: "Port", front: "TCP 993", back: "IMAPS: IMAP protected with TLS." },
+  { id: "fc-016", type: "Port", front: "TCP 995", back: "POP3S: POP3 protected with TLS." },
+  { id: "fc-017", type: "Port", front: "UDP 123", back: "NTP time synchronization." },
+  { id: "fc-018", type: "Port", front: "UDP 161/162", back: "SNMP queries use 161; SNMP traps commonly use 162." },
+  { id: "fc-019", type: "Protocol", front: "LDAP", back: "Directory access protocol; secure LDAP commonly uses LDAPS on TCP 636." },
+  { id: "fc-020", type: "Protocol", front: "Kerberos", back: "Ticket-based authentication that relies on synchronized time and a trusted KDC." },
+  { id: "fc-021", type: "Protocol", front: "RADIUS", back: "AAA protocol commonly used for VPN, wireless 802.1X, and network access authentication." },
+  { id: "fc-022", type: "Protocol", front: "TACACS+", back: "AAA protocol that separates authentication, authorization, and accounting; common for network devices." },
+  { id: "fc-023", type: "Concept", front: "CIA Triad", back: "Confidentiality, integrity, and availability are core security objectives." },
+  { id: "fc-024", type: "Concept", front: "Non-repudiation", back: "Assurance that someone cannot deny an action, commonly supported by digital signatures." },
+  { id: "fc-025", type: "Concept", front: "Hashing", back: "One-way transformation used to verify integrity, not to encrypt data." },
+  { id: "fc-026", type: "Concept", front: "Salting", back: "Adds unique random data to passwords before hashing to resist precomputed rainbow-table attacks." },
+  { id: "fc-027", type: "Crypto", front: "Symmetric Encryption", back: "Same secret key encrypts and decrypts; fast for bulk data." },
+  { id: "fc-028", type: "Crypto", front: "Asymmetric Encryption", back: "Public/private key pair supports key exchange, encryption, and digital signatures." },
+  { id: "fc-029", type: "Crypto", front: "Digital Signature", back: "Uses a private key to prove origin, integrity, and non-repudiation." },
+  { id: "fc-030", type: "Crypto", front: "Certificate Authority", back: "Trusted entity that issues and signs digital certificates." },
+  { id: "fc-031", type: "Crypto", front: "CRL", back: "Certificate revocation list: periodic list of revoked certificates." },
+  { id: "fc-032", type: "Crypto", front: "OCSP", back: "Online Certificate Status Protocol checks certificate revocation status in near real time." },
+  { id: "fc-033", type: "Attack", front: "Phishing", back: "Social engineering via deceptive messages designed to steal credentials or deliver malware." },
+  { id: "fc-034", type: "Attack", front: "Spear Phishing", back: "Highly targeted phishing tailored to a specific person, team, or organization." },
+  { id: "fc-035", type: "Attack", front: "Whaling", back: "Spear phishing aimed at executives or high-value targets." },
+  { id: "fc-036", type: "Attack", front: "Smishing", back: "SMS/text-message phishing." },
+  { id: "fc-037", type: "Attack", front: "Vishing", back: "Voice-call phishing." },
+  { id: "fc-038", type: "Attack", front: "Business Email Compromise", back: "Impersonation or account takeover used to redirect payments or sensitive business actions." },
+  { id: "fc-039", type: "Attack", front: "SQL Injection", back: "Unsanitized input changes database queries; parameterized queries help prevent it." },
+  { id: "fc-040", type: "Attack", front: "XSS", back: "Cross-site scripting injects script into trusted web pages; output encoding and CSP reduce risk." },
+  { id: "fc-041", type: "Attack", front: "CSRF", back: "Forces an authenticated browser to submit unwanted requests; anti-CSRF tokens help prevent it." },
+  { id: "fc-042", type: "Attack", front: "Directory Traversal", back: "Uses path manipulation like ../ to access files outside intended directories." },
+  { id: "fc-043", type: "Attack", front: "Race Condition", back: "Security flaw caused by timing between check and use operations." },
+  { id: "fc-044", type: "Attack", front: "Credential Stuffing", back: "Automated login attempts using breached username/password pairs." },
+  { id: "fc-045", type: "Attack", front: "Password Spraying", back: "Trying one or a few common passwords across many accounts to avoid lockouts." },
+  { id: "fc-046", type: "Attack", front: "Pass-the-Hash", back: "Uses captured password hashes to authenticate without knowing plaintext passwords." },
+  { id: "fc-047", type: "Attack", front: "On-path Attack", back: "Attacker intercepts or alters traffic between communicating parties." },
+  { id: "fc-048", type: "Attack", front: "DNS Poisoning", back: "Corrupts DNS responses or cache entries to redirect users to malicious destinations." },
+  { id: "fc-049", type: "Attack", front: "DDoS", back: "Distributed traffic flood that exhausts target bandwidth, services, or application resources." },
+  { id: "fc-050", type: "Malware", front: "Ransomware", back: "Malware that encrypts or steals data and demands payment for recovery or non-disclosure." },
+  { id: "fc-051", type: "Malware", front: "Rootkit", back: "Stealthy malware that hides presence and may operate with privileged access." },
+  { id: "fc-052", type: "Malware", front: "Trojan", back: "Malware disguised as legitimate software." },
+  { id: "fc-053", type: "Malware", front: "Worm", back: "Self-replicating malware that spreads without user action." },
+  { id: "fc-054", type: "Malware", front: "Logic Bomb", back: "Malicious code triggered by a condition such as a date or event." },
+  { id: "fc-055", type: "Control", front: "Preventive Control", back: "Stops incidents before they happen, such as ACLs, MFA, and hardening." },
+  { id: "fc-056", type: "Control", front: "Corrective Control", back: "Restores systems or reduces impact after an incident, such as backups or patching." },
+  { id: "fc-057", type: "Control", front: "Deterrent Control", back: "Discourages unwanted actions, such as warning banners, guards, or cameras." },
+  { id: "fc-058", type: "Control", front: "Compensating Control", back: "Alternative control used when the primary control is not feasible." },
+  { id: "fc-059", type: "Identity", front: "MFA", back: "Requires two or more factor types: something you know, have, are, do, or somewhere you are." },
+  { id: "fc-060", type: "Identity", front: "SSO", back: "Single sign-on lets a user authenticate once and access multiple trusted services." },
+  { id: "fc-061", type: "Identity", front: "Federation", back: "Trust relationship that lets identities from one domain access resources in another." },
+  { id: "fc-062", type: "Identity", front: "PAM", back: "Privileged access management controls, monitors, and rotates elevated access." },
+  { id: "fc-063", type: "Identity", front: "JIT Access", back: "Just-in-time access grants privileges only when needed and for limited time." },
+  { id: "fc-064", type: "Identity", front: "RBAC", back: "Role-based access control assigns permissions based on job roles." },
+  { id: "fc-065", type: "Identity", front: "ABAC", back: "Attribute-based access control evaluates attributes such as user, device, resource, and context." },
+  { id: "fc-066", type: "Identity", front: "MAC", back: "Mandatory access control uses system-enforced labels and classifications." },
+  { id: "fc-067", type: "Identity", front: "DAC", back: "Discretionary access control lets resource owners set access permissions." },
+  { id: "fc-068", type: "Network", front: "VLAN", back: "Logical Layer 2 segmentation that separates broadcast domains." },
+  { id: "fc-069", type: "Network", front: "Screened Subnet", back: "DMZ segment that isolates public-facing services from internal networks." },
+  { id: "fc-070", type: "Network", front: "Jump Server", back: "Hardened intermediary used to administer protected systems." },
+  { id: "fc-071", type: "Network", front: "NAC", back: "Network access control checks device/user compliance before allowing network access." },
+  { id: "fc-072", type: "Network", front: "802.1X", back: "Port-based network access control using supplicant, authenticator, and authentication server." },
+  { id: "fc-073", type: "Wireless", front: "WPA3 Enterprise", back: "Enterprise Wi-Fi security using strong encryption and 802.1X authentication." },
+  { id: "fc-074", type: "Wireless", front: "EAP-TLS", back: "Certificate-based EAP method that provides strong mutual authentication." },
+  { id: "fc-075", type: "Wireless", front: "Evil Twin", back: "Rogue wireless AP pretending to be legitimate to capture credentials or traffic." },
+  { id: "fc-076", type: "Cloud", front: "Shared Responsibility", back: "Cloud provider and customer split security duties depending on service model." },
+  { id: "fc-077", type: "Cloud", front: "IaaS Responsibility", back: "Customer usually manages OS, apps, data, identities, and network controls; provider manages physical infrastructure." },
+  { id: "fc-078", type: "Cloud", front: "SaaS Responsibility", back: "Provider manages most stack layers; customer manages data, identity, access, and configuration." },
+  { id: "fc-079", type: "Cloud", front: "CASB", back: "Cloud access security broker enforces visibility, policy, and data protection for cloud use." },
+  { id: "fc-080", type: "Cloud", front: "CSPM", back: "Cloud security posture management detects risky cloud configurations." },
+  { id: "fc-081", type: "Risk", front: "Risk Transfer", back: "Shift financial impact to another party, such as cyber insurance or contracts." },
+  { id: "fc-082", type: "Risk", front: "Risk Mitigation", back: "Reduce likelihood or impact by implementing controls." },
+  { id: "fc-083", type: "Risk", front: "Risk Avoidance", back: "Stop the activity that creates the risk." },
+  { id: "fc-084", type: "Risk", front: "Risk Acceptance", back: "Formally acknowledge risk without adding controls when it is within tolerance." },
+  { id: "fc-085", type: "Risk", front: "Residual Risk", back: "Risk remaining after controls are applied." },
+  { id: "fc-086", type: "Risk", front: "Inherent Risk", back: "Risk level before controls are applied." },
+  { id: "fc-087", type: "Risk", front: "RTO", back: "Recovery time objective: maximum acceptable time to restore a service." },
+  { id: "fc-088", type: "Risk", front: "RPO", back: "Recovery point objective: maximum acceptable data loss measured in time." },
+  { id: "fc-089", type: "Ir", front: "Preparation", back: "Incident response phase for policies, tools, training, contacts, and playbooks." },
+  { id: "fc-090", type: "Ir", front: "Detection and Analysis", back: "Identify, validate, scope, and prioritize a potential incident." },
+  { id: "fc-091", type: "Ir", front: "Containment", back: "Limit damage and prevent spread while preserving evidence." },
+  { id: "fc-092", type: "Ir", front: "Recovery", back: "Restore services to normal operation and monitor for recurrence." },
+  { id: "fc-093", type: "Ir", front: "Lessons Learned", back: "Post-incident review to improve controls, playbooks, and training." },
+  { id: "fc-094", type: "Forensics", front: "Chain of Custody", back: "Documented evidence handling trail showing who had possession and when." },
+  { id: "fc-095", type: "Forensics", front: "Order of Volatility", back: "Collect most volatile evidence first, such as RAM before disk images." },
+  { id: "fc-096", type: "Ops", front: "Change Management", back: "Formal process to review, approve, test, and document changes." },
+  { id: "fc-097", type: "Ops", front: "Secure Baseline", back: "Approved hardened configuration used as a starting point for systems." },
+  { id: "fc-098", type: "Ops", front: "Patch Management", back: "Prioritize, test, deploy, and verify updates to reduce vulnerability exposure." },
+  { id: "fc-099", type: "Ops", front: "Vulnerability Scan", back: "Automated detection of known weaknesses; may have false positives." },
+  { id: "fc-100", type: "Ops", front: "Penetration Test", back: "Authorized exploitation attempt to validate real-world attack paths and impacts." },
 ];
+
+const DAILY_FLASHCARD_COUNT = 20;
+const KNOWN_CARD_REVIEW_INTERVAL = 5;
 
 // ────────────────────────────────────────────────────────────────
 //  PBQ SCENARIOS
@@ -764,6 +864,8 @@ let sessionAnswered = 0;
 let sessionStartTs = Date.now();
 let currentCard = 0;
 let cardFlipped = false;
+let dailyFlashcardDeck = [];
+let dailyFlashcardKey = "";
 let reviewingWeakAreas = false;
 let currentPbqScenario = 0;
 let currentLabScenario = 0;
@@ -811,6 +913,7 @@ function setView(viewId) {
   if (viewId === "dashboard") renderDashboard();
   if (viewId === "progress") renderProgress();
   if (viewId === "settings") renderSettings();
+  if (viewId === "flashcards") renderFlashcard();
   if (viewId === "exams") renderExamStart();
 }
 
@@ -827,6 +930,7 @@ function escapeHtml(value) {
 function initializeStudyApp() {
   document.querySelector("#bankSize").textContent = questionBank.length;
   document.querySelector("#practiceBankSize").textContent = questionBank.length;
+  renderPracticeDomainOptions();
 
   document.querySelector("#quizLengthPicker").style.display = "";
   document.querySelector("#quizArea").style.display = "none";
@@ -914,15 +1018,14 @@ function renderDashboard() {
 
   const flashH2 = document.querySelector(".flash-card h2");
   if (flashH2) {
-    const reviewed = Object.keys(state.flashcardConfidence).length;
-    flashH2.textContent = `${reviewed} / ${flashcards.length}`;
+    const known = Object.values(state.flashcardConfidence).filter((item) => item?.status === "known").length;
+    flashH2.textContent = `${known} / ${flashcards.length}`;
   }
   const flashP = document.querySelector(".flash-card > p:last-of-type");
   if (flashP && flashP.previousElementSibling?.tagName === "H2") {
-    const reviewed = Object.keys(state.flashcardConfidence).length;
-    flashP.textContent = reviewed >= flashcards.length
-      ? "All cards reviewed. Confidence levels are tracked in your progress."
-      : `${flashcards.length - reviewed} cards remaining. Keep reviewing daily.`;
+    const unknown = Object.values(state.flashcardConfidence).filter((item) => item?.status === "trouble").length;
+    flashP.textContent = `Daily set: ${DAILY_FLASHCARD_COUNT} cards. Unknown cards repeat; known cards reappear occasionally.`;
+    if (unknown > 0) flashP.textContent += ` ${unknown} marked for extra review.`;
   }
 
   // Review queue count
@@ -970,6 +1073,66 @@ function renderStudyPlan() {
 // ────────────────────────────────────────────────────────────────
 //  RENDER: QUIZ
 // ────────────────────────────────────────────────────────────────
+
+function getPracticeDomainSelect() {
+  return document.querySelector("#practiceDomainSelect");
+}
+
+function getSelectedPracticeItem() {
+  const select = getPracticeDomainSelect();
+  if (!select || select.value === "all") return null;
+  const index = Number(select.value);
+  return Number.isInteger(index) ? studyPlanItems[index] : null;
+}
+
+function getSelectedPracticeObjectives() {
+  const selectedPracticeObjectives = getSelectedPracticeItem()?.objectives || [];
+  return selectedPracticeObjectives;
+}
+
+function getSelectedPracticeTemplateIds() {
+  const selectedPracticeObjectives = getSelectedPracticeObjectives();
+  const totalTemplates = Math.floor(questionBank.length / 4);
+  return Array.from({ length: totalTemplates }, (_, i) => i)
+    .filter((templateId) => {
+      if (selectedPracticeObjectives.length === 0) return true;
+      const question = questionBank[templateId * 4];
+      return selectedPracticeObjectives.includes(question?.objective);
+    });
+}
+
+function getSelectedPracticeQuestionIds(includeAllVariants = true) {
+  const selectedPracticeObjectives = getSelectedPracticeObjectives();
+  const ids = questionBank
+    .map((question, index) => {
+      if (selectedPracticeObjectives.length === 0 || selectedPracticeObjectives.includes(question.objective)) {
+        return index;
+      }
+      return null;
+    })
+    .filter((id) => id !== null);
+
+  if (ids.length > 0) return ids;
+
+  return includeAllVariants ? questionBank.map((_, index) => index) : [];
+}
+
+function renderPracticeDomainOptions() {
+  const select = getPracticeDomainSelect();
+  if (!select) return;
+
+  const currentValue = select.value || "all";
+  const options = [
+    '<option value="all">All Daily Plan sections</option>',
+    ...studyPlanItems.map((item, index) => {
+      const count = questionBank.filter((question) => item.objectives.includes(question.objective)).length;
+      return `<option value="${index}">${item.title} (${count} questions)</option>`;
+    }),
+  ];
+
+  select.innerHTML = options.join("");
+  select.value = [...select.options].some((option) => option.value === currentValue) ? currentValue : "all";
+}
 
 function renderQuestion() {
   const question = questionBank[currentQuestion];
@@ -1023,6 +1186,7 @@ function chooseAnswer(index) {
 
 
 function getWeakAreaQuestionIds() {
+  const selectedPracticeObjectives = getSelectedPracticeObjectives();
   const missed = new Set(
     state.quizResults.filter(r => !r.correct).map(r => Math.floor(r.id / 4))
   );
@@ -1034,6 +1198,8 @@ function getWeakAreaQuestionIds() {
 
   const ids = [];
   stillWeak.forEach(tid => {
+    const templateQuestion = questionBank[tid * 4];
+    if (selectedPracticeObjectives.length > 0 && !selectedPracticeObjectives.includes(templateQuestion?.objective)) return;
     for (let v = 0; v < 4; v++) {
       const qid = tid * 4 + v;
       if (qid < questionBank.length) ids.push(qid);
@@ -1056,10 +1222,15 @@ function shuffle(arr) {
 }
 
 function startQuiz(length) {
-  const totalTemplates = Math.floor(questionBank.length / 4);
-  const count = Math.min(length, totalTemplates);
-  const templateIds = shuffle(Array.from({ length: totalTemplates }, (_, i) => i)).slice(0, count);
-  const pool = templateIds.map(tid => tid * 4 + Math.floor(Math.random() * 4));
+  const templateIds = getSelectedPracticeTemplateIds();
+  const count = Math.min(length, templateIds.length);
+  const sessionTemplateIds = shuffle(templateIds).slice(0, count);
+  const pool = sessionTemplateIds.map(tid => tid * 4 + Math.floor(Math.random() * 4));
+
+  if (pool.length === 0) {
+    alert("No questions found for that Daily Plan section yet. Try All Daily Plan sections.");
+    return;
+  }
 
   quizSession = { active: true, pool, index: 0, length: pool.length };
   reviewingWeakAreas = false;
@@ -1116,22 +1287,131 @@ function endQuizSession() {
 //  RENDER: FLASHCARDS
 // ────────────────────────────────────────────────────────────────
 
-function renderFlashcard() {
-  const card = flashcards[currentCard];
-  document.querySelector("#flashcardType").textContent = card.type;
-  document.querySelector("#flashcardFront").textContent = card.front;
-  document.querySelector("#flashcardBack").textContent = cardFlipped ? card.back : "";
-  document.querySelector("#flashcardProgress").textContent = `${currentCard + 1}/${flashcards.length}`;
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
 }
 
-function markFlashcardReviewed() {
-  const today = new Date().toISOString().slice(0, 10);
-  if (!state.streakDays.includes(today)) state.streakDays.push(today);
-  if (!state.flashcardConfidence[currentCard]) {
-    state.flashcardConfidence[currentCard] = { confidence: 0, lastReviewed: today };
+function daysBetween(dateA, dateB) {
+  const a = new Date(`${dateA}T00:00:00Z`).getTime();
+  const b = new Date(`${dateB}T00:00:00Z`).getTime();
+  if (Number.isNaN(a) || Number.isNaN(b)) return Number.POSITIVE_INFINITY;
+  return Math.floor((b - a) / 86400000);
+}
+
+function stableDailyScore(cardId, dateKey, salt = "") {
+  const input = `${dateKey}:${cardId}:${salt}`;
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
   }
-  state.flashcardConfidence[currentCard].lastReviewed = today;
+  return hash >>> 0;
+}
+
+function getFlashcardRecord(cardId) {
+  const record = state.flashcardConfidence[cardId];
+  if (record && typeof record === "object") return record;
+  return { status: "new", lastReviewed: "", knownCount: 0, troubleCount: 0 };
+}
+
+function shouldReviewKnownCard(card, today, record) {
+  const lastReviewed = record.lastReviewed || "1970-01-01";
+  const daysSinceReview = daysBetween(lastReviewed, today);
+  return daysSinceReview >= KNOWN_CARD_REVIEW_INTERVAL || stableDailyScore(card.id, today, "known-check") % 11 === 0;
+}
+
+function uniqueCards(cards) {
+  const seen = new Set();
+  return cards.filter((card) => {
+    if (seen.has(card.id)) return false;
+    seen.add(card.id);
+    return true;
+  });
+}
+
+function buildDailyFlashcardDeck(today = getTodayKey()) {
+  dailyFlashcardKey = today;
+  const withProgress = flashcards.map((card) => ({ card, record: getFlashcardRecord(card.id) }));
+  const byDailyOrder = (a, b, salt) => stableDailyScore(a.card.id, today, salt) - stableDailyScore(b.card.id, today, salt);
+
+  const troubleCards = withProgress
+    .filter(({ record }) => record.status === "trouble")
+    .sort((a, b) => byDailyOrder(a, b, "trouble"))
+    .map(({ card }) => card);
+
+  const newCards = withProgress
+    .filter(({ record }) => record.status !== "known" && record.status !== "trouble")
+    .sort((a, b) => byDailyOrder(a, b, "new"))
+    .map(({ card }) => card);
+
+  const knownReviewCards = withProgress
+    .filter(({ card, record }) => record.status === "known" && shouldReviewKnownCard(card, today, record))
+    .sort((a, b) => byDailyOrder(a, b, "known-review"))
+    .map(({ card }) => card);
+
+  const fallbackKnownCards = withProgress
+    .filter(({ record }) => record.status === "known")
+    .sort((a, b) => byDailyOrder(a, b, "known-fallback"))
+    .map(({ card }) => card);
+
+  return uniqueCards([...troubleCards, ...newCards, ...knownReviewCards, ...fallbackKnownCards]).slice(0, DAILY_FLASHCARD_COUNT);
+}
+
+function ensureDailyFlashcardDeck() {
+  const today = getTodayKey();
+  if (dailyFlashcardKey !== today || dailyFlashcardDeck.length === 0) {
+    dailyFlashcardDeck = buildDailyFlashcardDeck(today);
+    currentCard = Math.min(currentCard, dailyFlashcardDeck.length - 1);
+    if (currentCard < 0) currentCard = 0;
+  }
+  return dailyFlashcardDeck;
+}
+
+function flashcardStatusLabel(record) {
+  if (record.status === "known") return "Known";
+  if (record.status === "trouble") return "Unknown";
+  return "New";
+}
+
+function renderFlashcard() {
+  const deck = ensureDailyFlashcardDeck();
+  const card = deck[currentCard] || flashcards[0];
+  const record = getFlashcardRecord(card.id);
+  document.querySelector("#flashcardType").textContent = `${card.type} · ${flashcardStatusLabel(record)}`;
+  document.querySelector("#flashcardFront").textContent = card.front;
+  document.querySelector("#flashcardBack").textContent = cardFlipped ? card.back : "";
+  document.querySelector("#flashcardProgress").textContent = `${currentCard + 1}/${deck.length}`;
+  const summary = document.querySelector("#flashcardDeckSummary");
+  if (summary) {
+    const known = Object.values(state.flashcardConfidence).filter((item) => item?.status === "known").length;
+    const unknown = Object.values(state.flashcardConfidence).filter((item) => item?.status === "trouble").length;
+    summary.textContent = `Daily set: ${deck.length} cards · Known: ${known} · Unknown: ${unknown}`;
+  }
+}
+
+function markFlashcard(status) {
+  const deck = ensureDailyFlashcardDeck();
+  const card = deck[currentCard];
+  if (!card) return;
+  const today = getTodayKey();
+  if (!state.streakDays.includes(today)) state.streakDays.push(today);
+  const previous = getFlashcardRecord(card.id);
+  state.flashcardConfidence[card.id] = {
+    ...previous,
+    status,
+    lastReviewed: today,
+    knownCount: status === "known" ? (previous.knownCount || 0) + 1 : (previous.knownCount || 0),
+    troubleCount: status === "trouble" ? (previous.troubleCount || 0) + 1 : (previous.troubleCount || 0),
+  };
   saveState();
+  renderDashboard();
+}
+
+function advanceFlashcard(step) {
+  const deck = ensureDailyFlashcardDeck();
+  currentCard = (currentCard + step + deck.length) % deck.length;
+  cardFlipped = false;
+  renderFlashcard();
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -1584,7 +1864,9 @@ document.querySelector("#nextQuestion").addEventListener("click", () => {
     }
     currentQuestion = quizSession.pool[quizSession.index];
   } else {
-    currentQuestion = (currentQuestion + 1) % questionBank.length;
+    const scopedIds = getSelectedPracticeQuestionIds();
+    const currentScopedIndex = scopedIds.indexOf(currentQuestion);
+    currentQuestion = scopedIds[(currentScopedIndex + 1) % scopedIds.length];
   }
   renderQuestion();
 });
@@ -1603,7 +1885,9 @@ document.querySelector("#randomQuestion").addEventListener("click", () => {
     // Can't go random during a session - just pick next from pool
     return;
   }
-  currentQuestion = Math.floor(Math.random() * questionBank.length);
+  const scopedIds = getSelectedPracticeQuestionIds();
+  currentQuestion = scopedIds[Math.floor(Math.random() * scopedIds.length)];
+  document.querySelector("#quizArea").style.display = "";
   renderQuestion();
 });
 
@@ -1621,6 +1905,13 @@ document.querySelector("#reviewWeakAreas").addEventListener("click", () => {
 });
 
 // Quiz length picker buttons
+document.querySelector("#practiceDomainSelect").addEventListener("change", () => {
+  if (quizSession.active) endQuizSession();
+  const scopedIds = getSelectedPracticeQuestionIds();
+  currentQuestion = scopedIds[0] || 0;
+  document.querySelector("#explanation").textContent = "Choose a quiz length or random question for the selected Daily Plan section.";
+});
+
 document.querySelectorAll("[data-quiz-length]").forEach(btn => {
   btn.addEventListener("click", () => {
     const length = parseInt(btn.dataset.quizLength, 10);
@@ -1651,16 +1942,21 @@ document.querySelector("#flashcard").addEventListener("keydown", (event) => {
 });
 
 document.querySelector("#nextCard").addEventListener("click", () => {
-  markFlashcardReviewed();
-  currentCard = (currentCard + 1) % flashcards.length;
-  cardFlipped = false;
-  renderFlashcard();
+  advanceFlashcard(1);
 });
 
 document.querySelector("#prevCard").addEventListener("click", () => {
-  currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
-  cardFlipped = false;
-  renderFlashcard();
+  advanceFlashcard(-1);
+});
+
+document.querySelector("#markCardKnown").addEventListener("click", () => {
+  markFlashcard("known");
+  advanceFlashcard(1);
+});
+
+document.querySelector("#markCardTrouble").addEventListener("click", () => {
+  markFlashcard("trouble");
+  advanceFlashcard(1);
 });
 
 // PBQ

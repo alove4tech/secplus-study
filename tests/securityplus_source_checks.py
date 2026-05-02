@@ -28,6 +28,12 @@ def require_scenario_ids(array_name, expected_ids):
         require(f'id: "{scenario_id}"' in content, f"{scenario_id} is missing from {array_name}")
 
 
+def count_flashcard_ids():
+    match = re.search(r"const flashcards = \[(.*?)\n\];", APP, re.S)
+    require(match is not None, "flashcards array is missing")
+    return len(re.findall(r'id: "fc-', match.group(1)))
+
+
 def main():
     require('id="loginView"' not in INDEX, "login view should be removed")
     require('id="loginForm"' not in INDEX, "login form should be removed")
@@ -73,6 +79,40 @@ def main():
     require('calc(var(--value) * 1%)' in readiness_css, "readiness ring should use --value for its conic fill")
     require(' 78%' not in readiness_css, "readiness ring should not have a hard-coded 78% fill")
     require('readinessEl.style.setProperty("--value", readiness)' in APP, "dashboard should set the readiness ring --value")
+
+    require(count_flashcard_ids() >= 80, "expected a large flashcard pool of at least 80 cards")
+    require('const DAILY_FLASHCARD_COUNT = 20;' in APP, "daily flashcard deck should contain 20 cards")
+    require('const KNOWN_CARD_REVIEW_INTERVAL = 5;' in APP, "known cards should occasionally be rechecked")
+    require('function buildDailyFlashcardDeck(' in APP, "daily flashcard deck builder is missing")
+    require('function stableDailyScore(' in APP, "daily deterministic card scoring is missing")
+    require('function getFlashcardRecord(' in APP, "flashcard progress helper is missing")
+    require('function markFlashcard(status)' in APP, "flashcards should be markable as known or unknown")
+    require('markFlashcard("known")' in APP, "known flashcard status should be persisted")
+    require('markFlashcard("trouble")' in APP, "unknown flashcard status should be persisted")
+    require('troubleCards' in APP and 'knownReviewCards' in APP, "daily deck should prioritize unknown cards and sometimes include known cards")
+    require('id="markCardKnown"' in INDEX, "Known button is missing")
+    require('id="markCardTrouble"' in INDEX, "Unknown button is missing")
+    require('>Unknown</button>' in INDEX, "flashcard trouble button should be labeled Unknown")
+    require('Still Trouble' not in INDEX and 'Still trouble' not in INDEX and 'Still gives trouble' not in APP, "old Still Trouble wording should be removed")
+    require('id="flashcardDeckSummary"' in INDEX, "daily deck summary is missing")
+    require('Daily set' in INDEX, "flashcard UI should describe daily sets")
+    require('0 / 6' not in INDEX, "dashboard should not show stale 6-card flashcard count")
+    require('0 / 100' in INDEX, "dashboard should reflect the large flashcard pool")
+
+    require('A checklist, not an auto-generated lesson' in INDEX, "study plan should explain what it is")
+    require('Check items off manually as you finish them' in INDEX, "study plan should explain how to complete items")
+    require('Mark done after you complete that activity' in INDEX, "dashboard daily plan should explain completion")
+
+    require('id="practiceDomainSelect"' in INDEX, "scenario practice should have a domain/objective selector")
+    require('Practice one Daily Plan section at a time' in INDEX, "practice selector should explain Daily Plan alignment")
+    require('data-practice-domain-filter' in INDEX, "practice selector should expose a hook for filter styling")
+    require('objectives: ["1.1", "1.2"]' in APP, "study plan items should encode objective ranges for practice filtering")
+    require('function renderPracticeDomainOptions()' in APP, "practice domain selector renderer is missing")
+    require('function getSelectedPracticeQuestionIds(' in APP, "practice filtering helper is missing")
+    require('function getSelectedPracticeTemplateIds(' in APP, "practice template filtering helper is missing")
+    require('practiceDomainSelect' in APP, "practice domain selector should be wired in JavaScript")
+    require('selectedPracticeObjectives' in APP, "selected objectives should drive practice sessions")
+    require('.filter((id) => id !== null)' in APP, "practice filter should gracefully handle empty objective matches without dropping question 0")
 
     require(count_array_objects("pbqScenarios") >= 8, "expected at least 8 PBQ scenarios")
     require(count_array_objects("labScenarios") >= 8, "expected at least 8 lab scenarios")
