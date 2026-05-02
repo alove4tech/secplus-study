@@ -67,6 +67,13 @@ def main():
     require('id="themeToggle"' not in INDEX, "theme toggle control should be removed")
     require('#f5f7fa' not in CSS[:800], "light root palette should be removed")
 
+    readiness_match = re.search(r"\.readiness-ring \{(.*?)\n\}", CSS, re.S)
+    require(readiness_match is not None, "readiness ring styles should exist")
+    readiness_css = readiness_match.group(1)
+    require('calc(var(--value) * 1%)' in readiness_css, "readiness ring should use --value for its conic fill")
+    require(' 78%' not in readiness_css, "readiness ring should not have a hard-coded 78% fill")
+    require('readinessEl.style.setProperty("--value", readiness)' in APP, "dashboard should set the readiness ring --value")
+
     require(count_array_objects("pbqScenarios") >= 8, "expected at least 8 PBQ scenarios")
     require(count_array_objects("labScenarios") >= 8, "expected at least 8 lab scenarios")
     require_scenario_ids("pbqScenarios", [

@@ -473,13 +473,14 @@ h3 {
 }
 
 .readiness-ring {
+  --value: 0;
   width: 190px;
   height: 190px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   margin-inline: auto;
-  background: conic-gradient(var(--teal) 0 78%, #dbe8ed 78% 100%);
+  background: conic-gradient(var(--teal) 0 calc(var(--value) * 1%), #2d4657 0 100%);
   position: relative;
 }
 
