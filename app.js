@@ -1875,12 +1875,7 @@ function importProgress(file) {
   reader.onload = (e) => {
     try {
       const imported = JSON.parse(e.target.result);
-      const base = defaultState();
-      state = { ...base, ...imported };
-      // Ensure arrays
-      for (const key of ["quizResults", "quizSessions", "labScores", "pbqScores", "streakDays", "reviewQueue", "examResults", "userNotes"]) {
-        if (!Array.isArray(state[key])) state[key] = [];
-      }
+      state = coerceState(imported);
       saveState();
       renderDashboard();
       renderNotes();
