@@ -1609,7 +1609,7 @@ function renderExamStart() {
       const passLabel = exam.passed ? '<span style="color:var(--success)">PASS</span>' : '<span style="color:var(--danger)">FAIL</span>';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border)">
         <span>${date} — ${exam.total} questions</span>
-        <span>${exam.score}/${exam.total} (${exam.percentage}%) ${passLabel}</span>
+        <span>${exam.correct}/${exam.answered || exam.total} correct (${exam.percentage}%) ${passLabel}</span>
       </div>`;
     }).join("");
   }
@@ -1674,7 +1674,12 @@ function renderExamQuestion() {
   document.querySelector("#examQuestionDomain").textContent = q.domain;
   document.querySelector("#examQuestionText").textContent = q.text;
   document.querySelector("#examExplanation").textContent = examState.answers[examState.currentIndex] !== null ? q.explanation : "Choose an answer to see the explanation.";
-  document.querySelector("#examScoreDisplay").textContent = `${examState.correct}/${examState.currentIndex}`;
+  const answeredCount = examState.answers.filter(a => a !== null).length;
+  document.querySelector("#examScoreDisplay").textContent = `${examState.correct}/${answeredCount}`;
+
+  // Show/hide Previous button
+  const prevBtn = document.querySelector("#examPrev");
+  if (prevBtn) prevBtn.style.display = examState.currentIndex > 0 ? "" : "none";
 
   const answersEl = document.querySelector("#examAnswers");
   answersEl.innerHTML = "";
@@ -1713,7 +1718,8 @@ function examChooseAnswer(index) {
   });
 
   document.querySelector("#examExplanation").textContent = q.explanation;
-  document.querySelector("#examScoreDisplay").textContent = `${examState.correct}/${examState.currentIndex + 1}`;
+  const newAnsweredCount = examState.answers.filter(a => a !== null).length;
+  document.querySelector("#examScoreDisplay").textContent = `${examState.correct}/${newAnsweredCount}`;
 }
 
 function finishExam() {
@@ -1751,7 +1757,7 @@ function finishExam() {
   document.querySelector("#examResultScore").style.color = passed ? "var(--success)" : "var(--danger)";
   document.querySelector("#examResultPassFail").textContent = passed ? "✓ PASSED" : "✗ FAILED (Need 750/900)";
   document.querySelector("#examResultPassFail").style.color = passed ? "var(--success)" : "var(--danger)";
-  document.querySelector("#examResultDetails").textContent = `${correct} correct out of ${total} questions answered`;
+  document.querySelector("#examResultDetails").textContent = `${correct} correct out of ${answered} answered (${total} total)`;
 
   // Domain breakdown
   const breakdown = computeExamDomainBreakdown();
@@ -2091,6 +2097,12 @@ document.querySelector("#resetLab").addEventListener("click", () => renderLabChe
 // Exams
 document.querySelector("#startExam").addEventListener("click", () => startExam(90, false));
 document.querySelector("#startQuickExam").addEventListener("click", () => startExam(25, true));
+document.querySelector("#examPrev").addEventListener("click", () => {
+  if (examState.currentIndex > 0) {
+    examState.currentIndex--;
+    renderExamQuestion();
+  }
+});
 document.querySelector("#examNext").addEventListener("click", () => {
   if (examState.currentIndex < examState.questions.length - 1) {
     examState.currentIndex++;
