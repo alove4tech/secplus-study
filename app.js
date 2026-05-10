@@ -1852,7 +1852,6 @@ function removeUserNote(index) {
 // ────────────────────────────────────────────────────────────────
 
 function renderSettings() {
-  updateCurrentUserDisplay();
   const statsEl = document.querySelector("#settingsStats");
   if (statsEl) {
     const flashReviewed = Object.keys(state.flashcardConfidence).length;
