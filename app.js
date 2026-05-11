@@ -59,6 +59,13 @@ function loadState() {
 
 function saveState() {
   try {
+    // Prune streak days older than 60 days to prevent unbounded growth
+    if (state.streakDays.length > 60) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 60);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+      state.streakDays = state.streakDays.filter(d => d >= cutoffStr);
+    }
     localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(state));
   } catch { /* quota exceeded */ }
 }
@@ -777,6 +784,11 @@ function computeReadiness() {
 function computeStreak() {
   let streak = 0;
   let d = new Date();
+  const today = d.toISOString().slice(0, 10);
+  // If today isn't in streakDays, start counting from yesterday
+  if (!state.streakDays.includes(today)) {
+    d.setDate(d.getDate() - 1);
+  }
   while (true) {
     const iso = d.toISOString().slice(0, 10);
     if (state.streakDays.includes(iso)) {
@@ -1607,9 +1619,13 @@ function renderExamStart() {
     historyEl.innerHTML = state.examResults.slice().reverse().map((exam, i) => {
       const date = new Date(exam.ts).toLocaleDateString();
       const passLabel = exam.passed ? '<span style="color:var(--success)">PASS</span>' : '<span style="color:var(--danger)">FAIL</span>';
+      const pct = exam.percentage != null ? exam.percentage : (exam.total > 0 ? Math.round((exam.correct / exam.total) * 100) : 0);
+      const score = exam.scaledScore != null ? ` (${exam.scaledScore}/900)` : "";
+      const answered = exam.answered || exam.total;
+      const typeLabel = exam.isQuick ? "Quick Drill" : "Full Exam";
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border)">
-        <span>${date} — ${exam.total} questions</span>
-        <span>${exam.correct}/${exam.answered || exam.total} correct (${exam.percentage}%) ${passLabel}</span>
+        <span>${date} — ${typeLabel} — ${exam.total} questions</span>
+        <span>${exam.correct}/${answered} correct (${pct}%)${score} ${passLabel}</span>
       </div>`;
     }).join("");
   }
