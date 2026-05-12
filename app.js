@@ -916,6 +916,12 @@ const navButtons = document.querySelectorAll("[data-view]");
 const viewLinks = document.querySelectorAll("[data-view-link]");
 
 function setView(viewId) {
+  // Clean up a running exam timer when navigating away
+  if (examState.active && viewId !== "exams") {
+    if (examState.timer) clearInterval(examState.timer);
+    examState.timer = null;
+  }
+
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("active", view.id === viewId);
   });
@@ -1492,7 +1498,7 @@ function renderPbq() {
   document.querySelector("#pbqEyebrow").textContent = `Scenario ${currentPbqScenario + 1} of ${pbqScenarios.length}`;
   document.querySelector("#pbqTitle").textContent = scenario.title;
   document.querySelector("#pbqDescription").textContent = scenario.description;
-  document.querySelector("#pbqStrategy").innerHTML = scenario.strategy.map(s => `<li>${s}</li>`).join("");
+  document.querySelector("#pbqStrategy").innerHTML = scenario.strategy.map(s => `<li>${escapeHtml(s)}</li>`).join("");
 
   const table = document.querySelector("#pbqTable");
   table.innerHTML = scenario.items.map((item, index) => `
@@ -1553,7 +1559,7 @@ function renderLabChecklist() {
   document.querySelector("#labTitle").textContent = scenario.title;
   document.querySelector("#labStatus").textContent = scenario.status;
   document.querySelector("#labDescription").textContent = scenario.description;
-  document.querySelector("#labEvidence").innerHTML = scenario.evidence.map(e => `<li>${e}</li>`).join("");
+  document.querySelector("#labEvidence").innerHTML = scenario.evidence.map(e => `<li>${escapeHtml(e)}</li>`).join("");
 
   const checklist = document.querySelector("#labChecklist");
   checklist.innerHTML = "";
