@@ -903,6 +903,7 @@ let examState = {
   correct: 0,
   timer: null,
   timeRemaining: 0,
+  startedAt: 0,       // wall-clock timestamp for accurate timing
   isQuickExam: false,
 };
 
@@ -1663,6 +1664,7 @@ function startExam(count, isQuick) {
 
   examState.timeRemaining = 90 * 60; // 90 minutes in seconds
   if (isQuick) examState.timeRemaining = 25 * 60; // 25 min for quick
+  examState.startedAt = Date.now();
 
   document.querySelector("#examStart").style.display = "none";
   document.querySelector("#examActive").style.display = "";
@@ -1674,8 +1676,11 @@ function startExam(count, isQuick) {
 
 function startExamTimer() {
   if (examState.timer) clearInterval(examState.timer);
+  const totalAllowed = examState.timeRemaining; // total seconds allowed
   examState.timer = setInterval(() => {
-    examState.timeRemaining--;
+    // Use wall-clock elapsed to stay accurate when tab is backgrounded
+    const elapsed = Math.floor((Date.now() - examState.startedAt) / 1000);
+    examState.timeRemaining = Math.max(0, totalAllowed - elapsed);
     const min = Math.floor(examState.timeRemaining / 60);
     const sec = examState.timeRemaining % 60;
     document.querySelector("#examTimer").textContent = `${min}:${sec.toString().padStart(2, "0")}`;
@@ -2047,6 +2052,25 @@ document.querySelectorAll("[data-random-quiz-length]").forEach(btn => {
     const length = parseInt(btn.dataset.randomQuizLength, 10);
     startRandomQuiz(length);
   });
+});
+
+// Keyboard shortcuts — press 1–4 to select quiz or exam answers
+document.addEventListener("keydown", (event) => {
+  const key = Number(event.key);
+  if (key < 1 || key > 4) return;
+
+  // Practice quiz
+  const quizButtons = document.querySelectorAll("#answers .answer-button");
+  if (quizButtons.length > 0 && !quizButtons[0].disabled) {
+    if (quizButtons[key - 1]) quizButtons[key - 1].click();
+    return;
+  }
+
+  // Exam
+  const examButtons = document.querySelectorAll("#examAnswers .answer-button");
+  if (examButtons.length > 0 && !examButtons[0].disabled) {
+    if (examButtons[key - 1]) examButtons[key - 1].click();
+  }
 });
 
 // Confidence chips
