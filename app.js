@@ -66,6 +66,14 @@ function saveState() {
       const cutoffStr = cutoff.toISOString().slice(0, 10);
       state.streakDays = state.streakDays.filter(d => d >= cutoffStr);
     }
+    // Prune quiz results older than 90 days and cap at 2000 entries
+    if (state.quizResults.length > 2000) {
+      const cutoff = Date.now() - 90 * 86400000;
+      state.quizResults = state.quizResults.filter(r => r.ts >= cutoff);
+      if (state.quizResults.length > 2000) {
+        state.quizResults = state.quizResults.slice(-2000);
+      }
+    }
     localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(state));
   } catch { /* quota exceeded */ }
 }
@@ -1011,6 +1019,7 @@ function renderDashboard() {
 
   const topStats = document.querySelectorAll(".top-stat");
   if (topStats[0]) topStats[0].textContent = streak;
+  if (topStats[1]) topStats[1].textContent = state.quizResults.length;
 
   document.querySelector("#domainList").innerHTML = domains.map((d, i) => `
     <div class="domain-row">
@@ -1968,6 +1977,20 @@ document.querySelector("#userNotesList")?.addEventListener("click", (event) => {
 menuToggle?.addEventListener("click", () => {
   const isOpen = sidebar.classList.toggle("open");
   menuToggle.setAttribute("aria-expanded", String(isOpen));
+});
+
+// Close mobile sidebar when tapping outside or pressing Escape
+document.addEventListener("click", (e) => {
+  if (sidebar.classList.contains("open") && !sidebar.contains(e.target) && e.target !== menuToggle && !menuToggle?.contains(e.target)) {
+    sidebar.classList.remove("open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+  }
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && sidebar.classList.contains("open")) {
+    sidebar.classList.remove("open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+  }
 });
 
 // Quiz navigation
