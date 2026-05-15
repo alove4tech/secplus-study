@@ -1632,16 +1632,16 @@ function renderExamStart() {
   if (state.examResults.length === 0) {
     historyEl.innerHTML = "<p>No previous exams. Take your first mock exam above.</p>";
   } else {
-    historyEl.innerHTML = state.examResults.slice().reverse().map((exam, i) => {
-      const date = new Date(exam.ts).toLocaleDateString();
+    historyEl.innerHTML = state.examResults.slice().reverse().map((exam) => {
+      const date = escapeHtml(new Date(exam.ts).toLocaleDateString());
       const passLabel = exam.passed ? '<span style="color:var(--success)">PASS</span>' : '<span style="color:var(--danger)">FAIL</span>';
       const pct = exam.percentage != null ? exam.percentage : (exam.total > 0 ? Math.round((exam.correct / exam.total) * 100) : 0);
-      const score = exam.scaledScore != null ? ` (${exam.scaledScore}/900)` : "";
+      const score = exam.scaledScore != null ? ` (${escapeHtml(String(exam.scaledScore))}/900)` : "";
       const answered = exam.answered || exam.total;
-      const typeLabel = exam.isQuick ? "Quick Drill" : "Full Exam";
+      const typeLabel = escapeHtml(exam.isQuick ? "Quick Drill" : "Full Exam");
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border)">
-        <span>${date} — ${typeLabel} — ${exam.total} questions</span>
-        <span>${exam.correct}/${answered} correct (${pct}%)${score} ${passLabel}</span>
+        <span>${date} — ${typeLabel} — ${escapeHtml(String(exam.total))} questions</span>
+        <span>${escapeHtml(String(exam.correct))}/${escapeHtml(String(answered))} correct (${escapeHtml(String(pct))}%)${score} ${passLabel}</span>
       </div>`;
     }).join("");
   }
@@ -1802,8 +1802,8 @@ function finishExam() {
     ${domainMap.map((d, i) => {
       const bd = breakdown[i] || { correct: 0, total: 0 };
       return `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border)">
-        <span>${d.name}</span>
-        <span>${bd.correct}/${bd.total}</span>
+        <span>${escapeHtml(d.name)}</span>
+        <span>${escapeHtml(String(bd.correct))}/${escapeHtml(String(bd.total))}</span>
       </div>`;
     }).join("")}
   `;
@@ -1832,7 +1832,7 @@ function renderProgress() {
     `<div class="heat-cell ${h.cls}" title="${h.pct}% mastered">${h.label}</div>`
   ).join("");
 
-  const markup = state.notes.map((note) => `<li>${note}</li>`).join("");
+  const markup = state.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
   const dashNotes = document.querySelector("#dashboardNotes");
   const notesList = document.querySelector("#notesList");
   if (dashNotes) dashNotes.innerHTML = markup;
@@ -1848,7 +1848,7 @@ function renderProgress() {
 }
 
 function renderNotes() {
-  const markup = state.notes.map((note) => `<li>${note}</li>`).join("");
+  const markup = state.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
   const dashNotes = document.querySelector("#dashboardNotes");
   const notesList = document.querySelector("#notesList");
   const userNotesList = document.querySelector("#userNotesList");
