@@ -1759,7 +1759,9 @@ function examChooseAnswer(index) {
 }
 
 function finishExam() {
+  if (!examState.active) return;
   if (examState.timer) clearInterval(examState.timer);
+  examState.timer = null;
   examState.active = false;
 
   const total = examState.questions.length;
@@ -2077,22 +2079,33 @@ document.querySelectorAll("[data-random-quiz-length]").forEach(btn => {
   });
 });
 
-// Keyboard shortcuts — press 1–4 to select quiz or exam answers
+function shouldIgnoreAnswerShortcut(event) {
+  const target = event.target;
+  return target?.closest?.("input, textarea, select, button, [contenteditable='true']");
+}
+
+function isElementInActiveView(element) {
+  return Boolean(element?.closest?.(".view.active"));
+}
+
+// Keyboard shortcuts — press 1–4 to select visible quiz or exam answers
+// without interfering with hidden views or text-entry controls.
 document.addEventListener("keydown", (event) => {
+  if (shouldIgnoreAnswerShortcut(event)) return;
   const key = Number(event.key);
   if (key < 1 || key > 4) return;
 
-  // Practice quiz
-  const quizButtons = document.querySelectorAll("#answers .answer-button");
-  if (quizButtons.length > 0 && !quizButtons[0].disabled) {
-    if (quizButtons[key - 1]) quizButtons[key - 1].click();
+  // Exam first: the practice view may still contain hidden answer buttons.
+  const examButtons = document.querySelectorAll("#examAnswers .answer-button");
+  if (examState.active && examButtons.length > 0 && isElementInActiveView(examButtons[0]) && !examButtons[0].disabled) {
+    if (examButtons[key - 1]) examButtons[key - 1].click();
     return;
   }
 
-  // Exam
-  const examButtons = document.querySelectorAll("#examAnswers .answer-button");
-  if (examButtons.length > 0 && !examButtons[0].disabled) {
-    if (examButtons[key - 1]) examButtons[key - 1].click();
+  // Practice quiz
+  const quizButtons = document.querySelectorAll("#answers .answer-button");
+  if (quizButtons.length > 0 && isElementInActiveView(quizButtons[0]) && !quizButtons[0].disabled) {
+    if (quizButtons[key - 1]) quizButtons[key - 1].click();
   }
 });
 

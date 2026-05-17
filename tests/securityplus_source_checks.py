@@ -167,6 +167,14 @@ def main():
         "vulnerability-prioritization",
     ])
 
+    require('const prevBtn = document.querySelector("#examPrev")' in APP, "exam Previous button visibility should be managed")
+    require('document.querySelector("#examPrev").addEventListener("click"' in APP, "exam Previous button should be wired")
+    require('if (!examState.active) return;' in APP, "finishing an exam should be idempotent")
+    require('examState.timer = null;' in APP, "finishing an exam should clear timer state")
+    require('function shouldIgnoreAnswerShortcut(event)' in APP, "answer shortcuts should ignore text-entry controls")
+    require('function isElementInActiveView(element)' in APP, "answer shortcuts should only target visible active views")
+    require('examState.active && examButtons.length > 0 && isElementInActiveView(examButtons[0])' in APP, "exam shortcuts should not be stolen by hidden practice answers")
+
     print("All Security+ source checks passed.")
 
 
