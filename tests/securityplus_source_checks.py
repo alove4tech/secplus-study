@@ -169,11 +169,21 @@ def main():
 
     require('const prevBtn = document.querySelector("#examPrev")' in APP, "exam Previous button visibility should be managed")
     require('document.querySelector("#examPrev").addEventListener("click"' in APP, "exam Previous button should be wired")
+    require('function getExamAnsweredCount()' in APP, "exam answered count helper should exist")
+    require('function requestFinishExam()' in APP, "manual exam finish should guard against accidental incomplete submissions")
+    require('Finish the exam anyway?' in APP, "manual exam finish should confirm when answers are missing")
+    require('nextBtn.textContent = examState.currentIndex === total - 1 ? "Finish Exam" : "Next Question"' in APP, "exam Next button should clearly become Finish Exam on the last question")
     require('if (!examState.active) return;' in APP, "finishing an exam should be idempotent")
     require('examState.timer = null;' in APP, "finishing an exam should clear timer state")
     require('function shouldIgnoreAnswerShortcut(event)' in APP, "answer shortcuts should ignore text-entry controls")
     require('function isElementInActiveView(element)' in APP, "answer shortcuts should only target visible active views")
     require('examState.active && examButtons.length > 0 && isElementInActiveView(examButtons[0])' in APP, "exam shortcuts should not be stolen by hidden practice answers")
+
+    require('const MAX_PROGRESS_IMPORT_BYTES = 1024 * 1024;' in APP, "progress imports should have a conservative size limit")
+    require('file.size > MAX_PROGRESS_IMPORT_BYTES' in APP, "oversized progress imports should be rejected before reading")
+    require('typeof e.target.result !== "string"' in APP, "progress imports should validate FileReader output type")
+    require('reader.onerror' in APP, "progress import should handle file read errors")
+    require('renderProgress();' in APP, "progress import should refresh the analytics view")
 
     print("All Security+ source checks passed.")
 

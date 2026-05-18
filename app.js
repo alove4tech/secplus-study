@@ -3,6 +3,7 @@
 // ────────────────────────────────────────────────────────────────
 
 const LEGACY_STORAGE_KEY = "secplus-study-progress-v4";
+const MAX_PROGRESS_IMPORT_BYTES = 1024 * 1024;
 
 function coerceState(parsed) {
   const base = defaultState();
@@ -1701,21 +1702,28 @@ function startExamTimer() {
   }, 1000);
 }
 
+function getExamAnsweredCount() {
+  return examState.answers.filter(a => a !== null).length;
+}
+
 function renderExamQuestion() {
   const q = examState.questions[examState.currentIndex];
   const total = examState.questions.length;
+  const answeredCount = getExamAnsweredCount();
   document.querySelector("#examCounter").textContent = `Question ${examState.currentIndex + 1} / ${total}`;
+  document.querySelector("#examProgressLabel").textContent = `${answeredCount} / ${total} answered`;
   document.querySelector("#examQuestionCounter").textContent = `${examState.currentIndex + 1} / ${total}`;
   document.querySelector("#examQuestionObj").textContent = q.objective;
   document.querySelector("#examQuestionDomain").textContent = q.domain;
   document.querySelector("#examQuestionText").textContent = q.text;
   document.querySelector("#examExplanation").textContent = examState.answers[examState.currentIndex] !== null ? q.explanation : "Choose an answer to see the explanation.";
-  const answeredCount = examState.answers.filter(a => a !== null).length;
   document.querySelector("#examScoreDisplay").textContent = `${examState.correct}/${answeredCount}`;
 
-  // Show/hide Previous button
+  // Show/hide Previous button and label the terminal action clearly.
   const prevBtn = document.querySelector("#examPrev");
   if (prevBtn) prevBtn.style.display = examState.currentIndex > 0 ? "" : "none";
+  const nextBtn = document.querySelector("#examNext");
+  if (nextBtn) nextBtn.textContent = examState.currentIndex === total - 1 ? "Finish Exam" : "Next Question";
 
   const answersEl = document.querySelector("#examAnswers");
   answersEl.innerHTML = "";
@@ -1754,8 +1762,19 @@ function examChooseAnswer(index) {
   });
 
   document.querySelector("#examExplanation").textContent = q.explanation;
-  const newAnsweredCount = examState.answers.filter(a => a !== null).length;
+  const newAnsweredCount = getExamAnsweredCount();
   document.querySelector("#examScoreDisplay").textContent = `${examState.correct}/${newAnsweredCount}`;
+  document.querySelector("#examProgressLabel").textContent = `${newAnsweredCount} / ${examState.questions.length} answered`;
+}
+
+function requestFinishExam() {
+  if (!examState.active) return;
+  const total = examState.questions.length;
+  const unanswered = total - getExamAnsweredCount();
+  if (unanswered > 0 && !confirm(`You still have ${unanswered} unanswered question${unanswered !== 1 ? "s" : ""}. Finish the exam anyway?`)) {
+    return;
+  }
+  finishExam();
 }
 
 function finishExam() {
@@ -1766,7 +1785,7 @@ function finishExam() {
 
   const total = examState.questions.length;
   // Count answered
-  const answered = examState.answers.filter(a => a !== null).length;
+  const answered = getExamAnsweredCount();
   const correct = examState.correct;
   const percentage = Math.round((correct / total) * 100);
   // CompTIA scale: 100-900, passing 750 ≈ 83%
@@ -1914,20 +1933,29 @@ function exportProgress() {
 }
 
 function importProgress(file) {
+  if (!file) return;
+  if (file.size > MAX_PROGRESS_IMPORT_BYTES) {
+    alert("That backup is too large to import. Please choose a Security+ progress JSON file under 1 MB.");
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
+      if (typeof e.target.result !== "string") throw new Error("Unexpected import payload");
       const imported = JSON.parse(e.target.result);
       state = coerceState(imported);
       saveState();
       renderDashboard();
       renderNotes();
+      renderProgress();
       renderSettings();
       alert("Progress imported successfully.");
     } catch {
       alert("Invalid file. Please select a valid progress JSON file.");
     }
   };
+  reader.onerror = () => alert("Could not read that file. Please try exporting again or choose a different backup.");
   reader.readAsText(file);
 }
 
@@ -2189,10 +2217,10 @@ document.querySelector("#examNext").addEventListener("click", () => {
     examState.currentIndex++;
     renderExamQuestion();
   } else {
-    finishExam();
+    requestFinishExam();
   }
 });
-document.querySelector("#examFinish").addEventListener("click", () => finishExam());
+document.querySelector("#examFinish").addEventListener("click", requestFinishExam);
 document.querySelector("#examBackToStart").addEventListener("click", () => renderExamStart());
 
 // Settings
